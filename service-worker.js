@@ -1,4 +1,4 @@
-const CACHE_NAME = 'checklist-retirada-v1';
+const CACHE_NAME = 'checklist-retirada-v2';
 const APP_SHELL = [
   './',
   './index.html',
@@ -22,7 +22,7 @@ self.addEventListener('activate', function (event) {
   event.waitUntil(
     caches.keys().then(function (keys) {
       return Promise.all(keys.filter(function (key) {
-        return key !== CACHE_NAME;
+        return key.indexOf('checklist-retirada-') === 0 && key !== CACHE_NAME;
       }).map(function (key) {
         return caches.delete(key);
       }));
@@ -33,20 +33,23 @@ self.addEventListener('activate', function (event) {
 });
 
 self.addEventListener('fetch', function (event) {
-  if (event.request.method !== 'GET') return;
+  if (event.request.method !== 'GET' || new URL(event.request.url).origin !== self.location.origin) return;
 
   event.respondWith(
     caches.match(event.request).then(function (cached) {
       if (cached) return cached;
 
       return fetch(event.request).then(function (response) {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then(function (cache) {
-          cache.put(event.request, copy);
-        }).catch(function () {});
+        if (response.ok && new URL(event.request.url).pathname.indexOf(new URL(self.registration.scope).pathname) === 0) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then(function (cache) {
+            cache.put(event.request, copy);
+          }).catch(function () {});
+        }
         return response;
       }).catch(function () {
-        return caches.match('./index.html');
+        if (event.request.mode === 'navigate') return caches.match('./index.html');
+        return Response.error();
       });
     })
   );
