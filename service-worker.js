@@ -1,4 +1,4 @@
-const CACHE_NAME = 'checklist-retirada-v2';
+const CACHE_NAME = 'checklist-retirada-1.1';
 const APP_SHELL = [
   './',
   './index.html',
