@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Checklist de Retirada de Veículo Alugado – Emflortec</title>
+<style>
+:root{--bg:#f4f6f5;--card:#fff;--tx:#1b2420;--mut:#5d6b64;--bd:#d5dcd8;--ac:#1f6b4a;--ok:#1f8a4c;--nc:#c0392b;--na:#6b7280;--inp:#fff;}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;padding:12px;padding-top:calc(12px + env(safe-area-inset-top,0px));padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+.wrap{max-width:760px;margin:0 auto}
+header{background:var(--ac);color:#fff;border-radius:12px;padding:14px 16px;margin-bottom:12px}
+header small{opacity:.85;letter-spacing:.04em}
+header h1{font-size:1.15rem;margin:2px 0 0}
+.install-banner{display:none;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;margin-bottom:12px;background:#ecfdf5;border:1px solid rgba(31,107,74,.25);border-radius:12px;color:var(--tx)}
+.install-banner.show{display:flex}
+.install-banner strong{font-size:.9rem}
+.install-banner .btn{min-width:130px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:520px){.grid{grid-template-columns:1fr}}
+label.f{display:block;font-size:.8rem;color:var(--mut);font-weight:600}
+input[type=text],input[type=date],input[type=number],textarea{width:100%;margin-top:3px;padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--inp);color:var(--tx);font:inherit}
+textarea{min-height:70px;resize:vertical}
+.hint{font-size:.85rem;color:var(--mut);margin:0}
+h2{font-size:.95rem;margin:18px 0 8px;color:var(--ac);text-transform:uppercase;letter-spacing:.03em}
+.item{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:8px}
+.item.miss{border-color:var(--nc);box-shadow:0 0 0 2px color-mix(in srgb,var(--nc) 30%,transparent)}
+.item.obrig{border-left:4px solid var(--ac)}
+.item .t{display:flex;gap:8px}
+.item .n{font-weight:700;color:var(--mut);min-width:1.6em}
+.badge-obrig{display:inline-block;background:var(--nc);color:#fff;font-size:.65rem;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:6px;vertical-align:middle;letter-spacing:.03em}
+.opts{display:flex;gap:8px;margin-top:10px}
+.opts label{flex:1;position:relative}
+.opts input{position:absolute;opacity:0}
+.opts span{display:block;text-align:center;padding:10px 0;border:2px solid var(--bd);border-radius:8px;font-weight:700;color:var(--mut);cursor:pointer;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.opts input:checked+span.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.opts input:checked+span.nc{background:var(--nc);border-color:var(--nc);color:#fff}
+.opts input:checked+span.na{background:var(--na);border-color:var(--na);color:#fff}
+.opts input:focus-visible+span{outline:3px solid var(--ac);outline-offset:2px}
+.prob{display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--bd)}
+.item.isnc .prob{display:block}
+.fotoarea{display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--bd)}
+.item.foto-obrig .fotoarea{display:block}
+.btn{display:inline-block;padding:10px 14px;border-radius:8px;border:1px solid var(--ac);background:transparent;color:var(--ac);font:inherit;font-weight:600;cursor:pointer}
+.btn.pri{background:var(--ac);color:#fff;-webkit-print-color-adjust:exact}
+.btn.share{background:#25D366;border-color:#25D366;color:#fff}
+.btn.sec{background:var(--na);border-color:var(--na);color:#fff}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+.thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.thumb{position:relative;width:96px;height:96px}
+.thumb img{width:100%;height:100%;object-fit:cover;border-radius:8px;border:1px solid var(--bd)}
+.thumb button{position:absolute;top:-6px;right:-6px;width:26px;height:26px;border-radius:50%;border:0;background:var(--nc);color:#fff;font-size:16px;line-height:1;cursor:pointer}
+.aviso-obrig{display:none;margin-top:8px;padding:8px;border-radius:6px;background:color-mix(in srgb,var(--nc) 15%,transparent);color:var(--nc);font-weight:600;font-size:.8rem}
+.aviso-obrig.show{display:block}
+.contador-fotos{font-size:.8rem;color:var(--mut);margin-top:6px;font-weight:600}
+.contador-fotos.completo{color:var(--ok)}
+.contador-fotos.incompleto{color:var(--nc)}
+.sigbox{border:2px dashed var(--bd);border-radius:10px;background:#fff;margin-top:6px}
+#sig{display:block;width:100%;height:180px;touch-action:none;cursor:crosshair}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.actions .btn{flex:1;min-width:150px;text-align:center}
+#msg{display:none;margin-top:12px;padding:10px;border-radius:8px;background:color-mix(in srgb,var(--nc) 15%,transparent);color:var(--nc);font-weight:600}
+.legal{font-size:.8rem;color:var(--mut)}
+
+.tanque-wrap{grid-column:1 / -1}
+.tanque-opts{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.tanque-opts label{flex:1;min-width:56px;position:relative}
+.tanque-opts input{position:absolute;opacity:0}
+.tanque-opts span{display:block;text-align:center;padding:10px 4px;border:2px solid var(--bd);border-radius:8px;font-weight:700;font-size:.85rem;color:var(--mut);cursor:pointer;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.tanque-opts input:checked+span{background:var(--ac);border-color:var(--ac);color:#fff}
+.tanque-opts input:focus-visible+span{outline:3px solid var(--ac);outline-offset:2px}
+
+.fotos-veiculo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+@media (max-width:520px){.fotos-veiculo-grid{grid-template-columns:1fr 1fr}}
+.foto-slot{border:2px dashed var(--bd);border-radius:10px;padding:10px;text-align:center;min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+.foto-slot.tem-foto{border-style:solid;border-color:var(--ok)}
+.foto-slot img{width:100%;height:100px;object-fit:cover;border-radius:6px;margin-bottom:6px}
+.foto-slot .label-slot{font-size:.8rem;font-weight:700;color:var(--mut);margin-bottom:6px}
+.foto-slot .btn-add-foto{font-size:.75rem;padding:6px 10px}
+.foto-slot .rm-slot{position:absolute;top:-6px;right:-6px;width:24px;height:24px;border-radius:50%;border:0;background:var(--nc);color:#fff;font-size:14px;line-height:1;cursor:pointer;display:none}
+.foto-slot.tem-foto .rm-slot{display:block}
+
+@media print{
+ :root{color-scheme:light;--bg:#fff;--card:#fff;--tx:#000;--mut:#333;--bd:#aaa;--ac:#1f6b4a;--ok:#1f8a4c;--nc:#c0392b;--na:#666;--inp:#fff;background:#fff;color:#000}
+ html,body{background:#fff!important;color:#000!important;margin:0!important;padding:0!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ body{font-size:10pt}
+ .wrap{width:100%!important;max-width:100%!important;margin:0!important;padding:0!important;background:#fff!important;color:#000!important}
+ header,.btn,.actions,#msg,.add,.thumb button,.hint.noprint,.badge-obrig,.aviso-obrig,.contador-fotos{display:none!important}
+ .printtitle{display:block!important;color:#000!important;background:#fff!important}
+ .card,.item,.foto-slot,.sigbox{background:#fff!important;color:#000!important;box-shadow:none!important}
+ .card{break-inside:auto;page-break-inside:auto}
+ .item,.foto-slot{break-inside:avoid;page-break-inside:avoid}
+ .prob{display:block}
+ .item:not(.isnc) .prob{display:none}
+ .item.foto-obrig .fotoarea{display:block}
+ input[type=text],input[type=date],input[type=number],textarea{background:#fff!important;color:#000!important;border:0;border-bottom:1px solid #999;border-radius:0;padding:2px 0}
+ .sigbox{border:1px solid #000}
+ .tanque-opts span{background:#fff!important;color:#000!important;border-color:#999}
+ .foto-slot{border-color:#999}
+}
+.printtitle{display:none;text-align:center;margin-bottom:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><small>EMFLORTEC ENGENHARIA</small><h1>Checklist – Retirada de Veículo Alugado</h1></header>
+<div class="install-banner" id="installBanner" aria-live="polite">
+  <strong>Instalar este checklist no celular</strong>
+  <button type="button" class="btn pri" id="installAppBtn">Instalar app</button>
+</div>
+<div class="printtitle"><strong>EMFLORTEC ENGENHARIA</strong><br>CHECKLIST – RETIRADA DE VEÍCULO ALUGADO</div>
+
+<div class="card">
+ <div class="grid">
+  <label class="f">Placa<input type="text" id="placa" autocapitalize="characters"></label>
+  <label class="f">Locadora<input type="text" id="locadora"></label>
+  <label class="f">Modelo do veículo<input type="text" id="modelo"></label>
+  <label class="f">Data da retirada<input type="date" id="data"></label>
+  <label class="f">Contrato<input type="text" id="contrato"></label>
+  <label class="f">Quilometragem<input type="number" id="km" inputmode="numeric"></label>
+  <label class="f">Motorista<input type="text" id="motorista"></label>
+  <label class="f">CPF do motorista *<input type="text" id="cpf" inputmode="numeric" placeholder="000.000.000-00" maxlength="14"></label>
+  <div class="tanque-wrap">
+   <label class="f">Nível do tanque de combustível *</label>
+   <div class="tanque-opts" id="tanque">
+    <label><input type="radio" name="tanque" value="Vazio"><span>Vazio</span></label>
+    <label><input type="radio" name="tanque" value="1/4"><span>1/4</span></label>
+    <label><input type="radio" name="tanque" value="1/2"><span>1/2</span></label>
+    <label><input type="radio" name="tanque" value="3/4"><span>3/4</span></label>
+    <label><input type="radio" name="tanque" value="Cheio"><span>Cheio</span></label>
+   </div>
+  </div>
+ </div>
+</div>
+
+<div class="card" id="cardFotosVeiculo">
+ <h2 style="margin-top:0">📸 Fotos obrigatórias do veículo (4 lados)</h2>
+ <p class="hint" style="margin-bottom:0">Tire as 4 fotos do veículo antes de sair da locadora. Toque em cada campo para adicionar a foto correspondente.</p>
+ <div class="fotos-veiculo-grid" id="fotosVeiculoGrid"></div>
+ <div class="aviso-obrig" id="avisoFotosVeiculo">⚠️ As 4 fotos do veículo são obrigatórias (dianteira, traseira, lateral esquerda e lateral direita).</div>
+</div>
+
+<p class="hint"><b>Como preencher:</b> marque uma opção por item. <b>OK</b> = boas condições · <b>NC</b> = problema encontrado (aparece o campo para foto e descrição) · <b>N/A</b> = não se aplica. <br><b style="color:var(--nc)">Atenção:</b> tire as <b>4 fotos obrigatórias do veículo</b> no início. No item de <b>Lataria</b>, se houver avaria, adicione fotos das avarias. Preencha também o <b>CPF do motorista</b> e o <b>nível do tanque</b>.</p>
+
+<div id="lista"></div>
+
+<div class="card">
+ <label class="f">Observações gerais / danos identificados
+  <textarea id="obs" placeholder="Descreva danos, defeitos ou itens faltantes. Informe se a locadora foi comunicada e se foram feitas fotos."></textarea></label>
+</div>
+
+<div class="card">
+ <h2 style="margin-top:0">Confirmação do motorista</h2>
+ <p class="legal">Confirmo que realizei a conferência do veículo e registrei os problemas e danos identificados. Estou ciente de que qualquer condição que comprometa a segurança deve ser comunicada à gestão de frotas antes de utilizar o veículo.</p>
+ <label class="f">Assinatura do motorista (assine com o dedo)</label>
+ <div class="sigbox"><canvas id="sig"></canvas></div>
+ <div class="actions"><button type="button" class="btn" id="limpa">Limpar assinatura</button></div>
+ <label class="f" style="margin-top:12px;max-width:200px">Data<input type="date" id="dataass"></label>
+</div>
+
+<p class="legal">IMPORTANTE: este checklist é uma conferência inicial do veículo. Requisitos adicionais da locadora, do contrato ou do local de trabalho também devem ser atendidos.</p>
+
+<div id="msg" role="alert"></div>
+
+<div class="actions">
+  <button type="button" class="btn share" id="btnCompartilhar">📄 Compartilhar PDF pelo WhatsApp</button>
+  <button type="button" class="btn sec" id="btnNovo">🆕 Novo Checklist</button>
+</div>
+<p class="hint noprint" style="margin-top:8px">Toque em “Compartilhar PDF pelo WhatsApp”. Após a preparação do arquivo, toque novamente no mesmo botão e escolha o WhatsApp. Use “Novo Checklist” somente quando quiser limpar os dados e começar outro.</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('./service-worker.js').catch(function () {});
+  });
+}
+
+var deferredPrompt = null;
+var installBanner = document.getElementById('installBanner');
+var installAppBtn = document.getElementById('installAppBtn');
+
+window.addEventListener('beforeinstallprompt', function (event) {
+  event.preventDefault();
+  deferredPrompt = event;
+  if (installBanner) installBanner.classList.add('show');
+});
+
+if (installAppBtn) {
+  installAppBtn.addEventListener('click', function () {
+    if (!deferredPrompt) {
+      alert('Seu navegador não ofereceu a opção de instalação. Use o menu do navegador e escolha “Adicionar à tela inicial” ou “Instalar app”.');
+      return;
+    }
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.finally(function () {
+      deferredPrompt = null;
+      if (installBanner) installBanner.classList.remove('show');
+    });
+  });
+}
+
+window.addEventListener('appinstalled', function () {
+  if (installBanner) installBanner.classList.remove('show');
+});
+
+var SEC=[
+["1. Documentos e itens de segurança",["Documentos do veículo disponíveis e dentro da validade, quando aplicável (CRLV, cronotacógrafo).","Pneus em boas condições, sem cortes, bolhas ou desgaste excessivo.","Estepe disponível e em condições de uso.","Macaco e chave de roda disponíveis + triângulo ou cone de sinalização.","Cintos de segurança presentes e funcionando.","Sensor de ré ou câmera de ré.","Sirene de ré.","Luzes de alertas no painel."]],
+["2. Parte externa e vidros",["Lataria, portas e teto sem danos não registrados.","Para-choques dianteiro e traseiro em boas condições.","Para-brisa e demais vidros sem trincas que prejudiquem a segurança.","Retrovisores firmes, inteiros e com boa visibilidade.","Faróis, lanternas, luzes de freio e setas funcionando.","Placas legíveis e bem fixadas.","Limpadores e esguicho do para-brisa funcionando.","Adesivos de segurança padrão SENATRAN."]],
+["3. Interior e funcionamento",["Bancos, portas e travas em boas condições.","Buzina funcionando.","Freio de serviço e freio de estacionamento funcionando.","Direção sem falhas aparentes ou dificuldade anormal.","Ar-condicionado funcionando, quando equipado.","Vidros, travas e ajustes dos retrovisores funcionando."]],
+["4. Antes de sair da locadora",["Chaves e acessórios entregues pela locadora.","Fotos feitas dos quatro lados do veículo e de qualquer dano existente."]]
+];
+
+var $=function(i){return document.getElementById(i)};
+var fotos={};
+var fotosVeiculo={dianteira:null, traseira:null, lateral_esq:null, lateral_dir:null};
+var CHAVE_RESPOSTAS="checklist-retirada-veiculo-respostas";
+var avisoFalhaPersistencia=false;
+var n=0,html="";
+
+SEC.forEach(function(s){
+ html+="<h2>"+s[0]+"</h2>";
+ s[1].forEach(function(t){
+  n++;
+  var isLataria = t.indexOf("Lataria")>=0;
+  html+='<div class="item'+(isLataria?' foto-obrig':'')+'" id="it'+n+'" data-n="'+n+'"'+(isLataria?' data-foto-obrig="1"':'')+'>'+
+  '<div class="t"><span class="n">'+n+'</span><span>'+t+'</span></div>'+
+  '<div class="opts">'+["ok:OK","nc:NC","na:N/A"].map(function(o){var p=o.split(":");return '<label><input type="radio" name="r'+n+'" value="'+p[1]+'"><span class="'+p[0]+'">'+p[1]+'</span></label>'}).join("")+'</div>'+
+  '<div class="prob"><label class="f">Problema encontrado<textarea id="ob'+n+'" placeholder="Descreva o problema"></textarea></label></div>'+
+  (isLataria?'<div class="fotoarea"><label class="f">Fotos das avarias da lataria (opcional — adicione se houver avaria)</label>'+
+  '<div class="thumbs" id="th'+n+'"></div>'+
+  '<div class="add" style="margin-top:8px"><button type="button" class="btn" data-add="'+n+'">📷 Adicionar fotos de avarias</button>'+
+  '<input type="file" accept="image/*" capture="environment" multiple hidden id="fi'+n+'"></div></div>':'')+
+  '</div>';
+ });
+});
+$("lista").innerHTML=html;
+
+function informarFalhaPersistencia(err){
+ console.error("Não foi possível salvar ou restaurar as marcações do checklist.",err);
+ if(!avisoFalhaPersistencia){
+  avisoFalhaPersistencia=true;
+  alert("Não foi possível guardar as marcações neste navegador. Mantenha esta página aberta para não perder as respostas.");
+ }
+}
+function salvarRespostas(){
+ var respostas={};
+ for(var i=1;i<=n;i++){
+  var marcada=$("it"+i).querySelector("input[type=radio]:checked");
+  if(marcada) respostas[i]=marcada.value;
+ }
+ try{localStorage.setItem(CHAVE_RESPOSTAS,JSON.stringify(respostas));}
+ catch(err){informarFalhaPersistencia(err)}
+}
+function restaurarRespostas(){
+ try{
+  var respostas=JSON.parse(localStorage.getItem(CHAVE_RESPOSTAS)||"{}");
+  if(!respostas||typeof respostas!=="object") throw new Error("Formato de respostas salvo inválido.");
+  for(var i=1;i<=n;i++){
+   var valor=respostas[i];
+   if(valor!=="OK"&&valor!=="NC"&&valor!=="N/A") continue;
+   var item=$("it"+i),marcada=item.querySelector('input[value="'+valor+'"]');
+   if(marcada){marcada.checked=true;item.classList.toggle("isnc",valor==="NC")}
+  }
+ }catch(err){informarFalhaPersistencia(err)}
+}
+function limparRespostasSalvas(){
+ try{localStorage.removeItem(CHAVE_RESPOSTAS);}
+ catch(err){informarFalhaPersistencia(err)}
+}
+
+var SLOTS_VEICULO=[
+ {key:"dianteira", label:"Dianteira"},
+ {key:"traseira", label:"Traseira"},
+ {key:"lateral_esq", label:"Lateral esquerda"},
+ {key:"lateral_dir", label:"Lateral direita"}
+];
+(function(){
+ var g=$("fotosVeiculoGrid");var h="";
+ SLOTS_VEICULO.forEach(function(s){
+  h+='<div class="foto-slot" id="slot_'+s.key+'">'+
+   '<button type="button" class="rm-slot" data-rm-veic="'+s.key+'" aria-label="Remover foto">×</button>'+
+   '<div class="label-slot">'+s.label+'</div>'+
+   '<div class="slot-img-wrap" id="wrap_'+s.key+'"></div>'+
+   '<button type="button" class="btn btn-add-foto" data-add-veic="'+s.key+'">📷 Adicionar foto</button>'+
+   '<input type="file" accept="image/*" capture="environment" hidden id="fi_'+s.key+'">'+
+   '</div>';
+ });
+ g.innerHTML=h;
+})();
+
+function desenhaFotosVeiculo(){
+ SLOTS_VEICULO.forEach(function(s){
+  var slot=$("slot_"+s.key), wrap=$("wrap_"+s.key);
+  var url=fotosVeiculo[s.key];
+  if(url){
+   slot.classList.add("tem-foto");
+   wrap.innerHTML='<img src="'+url+'" alt="'+s.label+'">';
+  }else{
+   slot.classList.remove("tem-foto");
+   wrap.innerHTML='';
+  }
+ });
+ var todas=SLOTS_VEICULO.every(function(s){return !!fotosVeiculo[s.key]});
+ $("avisoFotosVeiculo").classList.toggle("show",!todas);
+ $("cardFotosVeiculo").classList.toggle("miss",!todas);
+ return todas;
+}
+
+function pegaGPS(){
+ return new Promise(function(res){
+  if(!navigator.geolocation){res(null);return}
+  navigator.geolocation.getCurrentPosition(function(p){res({lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy})},function(){res(null)},{enableHighAccuracy:true,timeout:10000,maximumAge:20000});
+ });
+}
+function dataHoraAgora(){
+ var d=new Date(),z=function(x){return String(x).padStart(2,"0")};
+ return z(d.getDate())+"/"+z(d.getMonth()+1)+"/"+d.getFullYear()+" "+z(d.getHours())+":"+z(d.getMinutes())+":"+z(d.getSeconds());
+}
+function carimbo(c,gps,quando){
+ var x=c.getContext("2d"),fs=Math.max(14,Math.round(c.width/42)),pad=Math.round(fs*0.5);
+ var l1=quando;
+ var l2=gps?("GPS: "+gps.lat.toFixed(6)+", "+gps.lon.toFixed(6)+" (±"+Math.round(gps.acc)+" m)"):"GPS indisponível";
+ var h=fs*2+pad*3;
+ x.fillStyle="rgba(0,0,0,0.6)";x.fillRect(0,c.height-h,c.width,h);
+ x.fillStyle="#fff";x.font="bold "+fs+"px Arial, sans-serif";x.textBaseline="top";
+ x.fillText(l1,pad,c.height-h+pad);
+ x.fillText(l2,pad,c.height-h+pad*2+fs);
+}
+function comprime(file,cb,gps,quando){
+ var rd=new FileReader();
+ rd.onload=function(){
+  var im=new Image();
+  im.onload=function(){
+   var m=1100,s=Math.min(1,m/Math.max(im.width,im.height));
+   var c=document.createElement("canvas");c.width=im.width*s;c.height=im.height*s;
+   c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+   carimbo(c,gps,quando);
+   cb(c.toDataURL("image/jpeg",0.72));
+  };
+  im.src=rd.result;
+ };
+ rd.readAsDataURL(file);
+}
+function desenha(k){
+ $("th"+k).innerHTML=(fotos[k]||[]).map(function(u,i){return '<div class="thumb"><img src="'+u+'" alt="Foto do item '+k+'"><button type="button" data-rm="'+k+'-'+i+'" aria-label="Remover foto">×</button></div>'}).join("");
+}
+
+document.addEventListener("change",function(e){
+ registrarAlteracaoChecklist();
+ var t=e.target;
+ if(t.type==="radio"){
+  var it=t.closest(".item");
+  if(it){it.classList.toggle("isnc",t.value==="NC");it.classList.remove("miss");salvarRespostas()}
+ }
+ if(t.type==="file"&&t.files.length){
+  if(t.id.indexOf("fi_")===0){
+   var key=t.id.slice(3);
+   var arq=t.files[0],quando=dataHoraAgora();
+   t.value="";
+   pegaGPS().then(function(gps){comprime(arq,function(u){fotosVeiculo[key]=u;desenhaFotosVeiculo();registrarAlteracaoChecklist();salvarAgora();},gps,quando)});
+   return;
+  }
+  var k=t.id.slice(2),arquivos=Array.prototype.slice.call(t.files),quando=dataHoraAgora();
+  t.value="";
+  pegaGPS().then(function(gps){
+   arquivos.forEach(function(f){comprime(f,function(u){(fotos[k]=fotos[k]||[]).push(u);desenha(k);registrarAlteracaoChecklist();salvarAgora();},gps,quando)});
+  });
+ }
+});
+document.addEventListener("click",function(e){
+ var av=e.target.getAttribute&&e.target.getAttribute("data-add-veic");
+ if(av){pegaGPS();$("fi_"+av).click();return}
+ var rv=e.target.getAttribute&&e.target.getAttribute("data-rm-veic");
+ if(rv){registrarAlteracaoChecklist();fotosVeiculo[rv]=null;desenhaFotosVeiculo();return}
+ var a=e.target.getAttribute&&e.target.getAttribute("data-add");
+ if(a){$("fi"+a).click();return}
+ var r=e.target.getAttribute&&e.target.getAttribute("data-rm");
+ if(r){registrarAlteracaoChecklist();var p=r.split("-");fotos[p[0]].splice(+p[1],1);desenha(p[0])}
+});
+
+var hoje=new Date();hoje=new Date(hoje.getTime()-hoje.getTimezoneOffset()*60000).toISOString().slice(0,10);
+$("data").value=hoje;$("dataass").value=hoje;
+
+$("cpf").addEventListener("input",function(){
+ var v=this.value.replace(/\D/g,"").slice(0,11);
+ var out="";
+ if(v.length>0)out=v.slice(0,3);
+ if(v.length>3)out+="."+v.slice(3,6);
+ if(v.length>6)out+="."+v.slice(6,9);
+ if(v.length>9)out+="-"+v.slice(9,11);
+ this.value=out;
+});
+
+var cv=$("sig"),cx=cv.getContext("2d"),desenhando=false,assinou=false;
+function ajusta(){
+ var r=cv.getBoundingClientRect(),d=window.devicePixelRatio||1;
+ cv.width=r.width*d;cv.height=r.height*d;
+ cx.setTransform(d,0,0,d,0,0);cx.lineWidth=2.5;cx.lineCap="round";cx.lineJoin="round";cx.strokeStyle="#000";
+}
+ajusta();window.addEventListener("resize",function(){if(!assinou)ajusta()});
+function pos(e){var r=cv.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top]}
+cv.addEventListener("pointerdown",function(e){registrarAlteracaoChecklist();e.preventDefault();cv.setPointerCapture(e.pointerId);desenhando=true;var p=pos(e);cx.beginPath();cx.moveTo(p[0],p[1]);cx.lineTo(p[0]+.1,p[1]+.1);cx.stroke();assinou=true});
+cv.addEventListener("pointermove",function(e){if(!desenhando)return;e.preventDefault();var p=pos(e);cx.lineTo(p[0],p[1]);cx.stroke()});
+["pointerup","pointercancel","pointerleave"].forEach(function(ev){cv.addEventListener(ev,function(){desenhando=false})});
+$("limpa").onclick=function(){registrarAlteracaoChecklist();assinou=false;ajusta();salvarAgora();};
+
+function validar(){
+ var erros=[],primeiro=null;
+ var fotosOk=SLOTS_VEICULO.every(function(s){return !!fotosVeiculo[s.key]});
+ if(!fotosOk){
+  $("avisoFotosVeiculo").classList.add("show");
+  $("cardFotosVeiculo").classList.add("miss");
+  primeiro=primeiro||$("cardFotosVeiculo");
+ }
+ for(var i=1;i<=n;i++){
+  var it=$("it"+i),ok=it.querySelector("input:checked");
+  if(!ok){it.classList.add("miss");erros.push("item "+i);primeiro=primeiro||it}
+ }
+ var tanqueSel=document.querySelector('input[name="tanque"]:checked');
+ var extra=[];
+ if(!tanqueSel)extra.push("nível do tanque");
+ if(!$('placa').value.trim())extra.push("placa");
+ if(!$('motorista').value.trim())extra.push("nome do motorista");
+ if(!$('cpf').value.trim())extra.push("CPF do motorista");
+ if(!assinou)extra.push("assinatura");
+ var m=$("msg");
+ if(erros.length||extra.length||!fotosOk){
+  var t=[];
+  if(!fotosOk)t.push("Adicione as 4 fotos obrigatórias do veículo (dianteira, traseira, lateral esquerda e lateral direita).");
+  if(erros.length)t.push("Marque uma opção em: "+erros.join(", ")+".");
+  if(extra.length)t.push("Falta: "+extra.join(", ")+".");
+  m.textContent=t.join(" ");m.style.display="block";
+  (primeiro||m).scrollIntoView({behavior:"smooth",block:"center"});
+  return false;
+ }
+ m.style.display="none";
+ return true;
+}
+
+function prepararParaPDF(){
+  var stage=document.createElement("div");
+  stage.id="pdfStage";
+  stage.style.cssText="position:relative;width:1000px;z-index:99999;background:#fff;color:#111;opacity:1;pointer-events:none;overflow:visible;box-sizing:border-box;font:12px/1.35 Arial,sans-serif;padding:16px 20px;";
+  function elemento(tag,texto,css){
+    var el=document.createElement(tag);
+    if(texto!==undefined)el.textContent=texto;
+    if(css)el.style.cssText=css;
+    return el;
+  }
+  function celula(linha,texto,css,tag){
+    linha.appendChild(elemento(tag||"td",texto,css));
+  }
+  function tabela(cabecalhos){
+    var t=elemento("table",undefined,"width:100%;border-collapse:collapse;table-layout:fixed;margin:8px 0 12px;");
+    var thead=elemento("thead"),tr=elemento("tr");
+    cabecalhos.forEach(function(titulo){
+      celula(tr,titulo,"border:1px solid #9aa79f;background:#1f6b4a;color:#fff;padding:6px;text-align:left;font-weight:bold;","th");
+    });
+    thead.appendChild(tr);t.appendChild(thead);t.appendChild(elemento("tbody"));
+    return t;
+  }
+  stage.appendChild(elemento("h1","EMFLORTEC ENGENHARIA | CHECKLIST – RETIRADA DE VEÍCULO ALUGADO","font-size:18px;text-align:center;margin:0 0 10px;color:#1f6b4a;"));
+  var dados=tabela(["Identificação","Dados","Identificação","Dados","Identificação","Dados"]);
+  [
+    ["Placa",$("placa").value.trim()||"-","Locadora",$("locadora").value.trim()||"-","Data da retirada",$("data").value||"-"],
+    ["Modelo",$("modelo").value.trim()||"-","Contrato",$("contrato").value.trim()||"-","Motorista",$("motorista").value.trim()||"-"],
+    ["CPF",$("cpf").value.trim()||"-","Quilometragem",$("km").value||"-","Tanque",document.querySelector('input[name="tanque"]:checked')?document.querySelector('input[name="tanque"]:checked').value:"-"],
+    ["Data da assinatura",$("dataass").value||"-","Observações","-","",""]
+  ].forEach(function(valores){
+    var tr=elemento("tr");
+    valores.forEach(function(valor,i){
+      celula(tr,valor,i%2===0?"border:1px solid #c5ccc8;padding:6px;background:#edf2ef;font-weight:bold;":"border:1px solid #c5ccc8;padding:6px;overflow-wrap:anywhere;");
+    });
+    dados.tBodies[0].appendChild(tr);
+  });
+  stage.appendChild(dados);
+  var observacoes=$("obs").value.trim();
+  if(observacoes)stage.appendChild(elemento("p","Observações gerais: "+observacoes,"margin:6px 0 12px;padding:7px;border:1px solid #c5ccc8;white-space:pre-wrap;"));
+
+  var checklist=tabela(["Nº","Item do checklist","Resultado","Observação / problema","Fotos"]);
+  checklist.style.cssText+=";font-size:10px;";
+  var itemN=0,fotosAnexo=[];
+  SEC.forEach(function(sec){
+    var secao=elemento("tr"),cel=elemento("th",sec[0],"border:1px solid #9aa79f;background:#dce9e1;color:#174e36;padding:5px;text-align:left;font-size:10px;");
+    cel.colSpan=5;secao.appendChild(cel);checklist.tBodies[0].appendChild(secao);
+    sec[1].forEach(function(descricao){
+      itemN++;
+      var item=$("it"+itemN),resposta=item.querySelector('input[type="radio"]:checked');
+      var observacao=$("ob"+itemN).value.trim(),fotosItem=fotos[itemN]||[];
+      var tr=elemento("tr");
+      celula(tr,String(itemN),"border:1px solid #c5ccc8;padding:4px 5px;text-align:center;vertical-align:top;font-weight:bold;");
+      celula(tr,descricao,"border:1px solid #c5ccc8;padding:4px 5px;vertical-align:top;overflow-wrap:anywhere;");
+      celula(tr,resposta?resposta.value:"-","border:1px solid #c5ccc8;padding:4px 5px;text-align:center;vertical-align:top;font-weight:bold;"+(resposta&&resposta.value==="NC"?"color:#c0392b;":""));
+      celula(tr,observacao||"-","border:1px solid #c5ccc8;padding:4px 5px;vertical-align:top;white-space:pre-wrap;overflow-wrap:anywhere;");
+      celula(tr,fotosItem.length?String(fotosItem.length):"-","border:1px solid #c5ccc8;padding:4px 5px;text-align:center;vertical-align:top;");
+      checklist.tBodies[0].appendChild(tr);
+      fotosItem.forEach(function(url,fotoN){
+        fotosAnexo.push({url:url,legenda:"Item "+itemN+" — "+descricao+" — foto "+(fotoN+1)+"/"+fotosItem.length});
+      });
+    });
+  });
+  checklist.querySelectorAll("th").forEach(function(th){th.style.cssText+=";border:1px solid #9aa79f;background:#1f6b4a;color:#fff;padding:6px;text-align:left;font-weight:bold;";});
+  var larguras=["5%","43%","10%","34%","8%"];
+  checklist.querySelectorAll("tr").forEach(function(tr){
+    if(tr.cells.length===5)tr.cells.forEach(function(td,i){td.style.width=larguras[i];});
+  });
+  stage.appendChild(checklist);
+
+  var assinatura=document.querySelector("#sig");
+  if(assinatura&&assinou){
+    var areaAssinatura=elemento("div",undefined,"margin-top:10px;display:flex;align-items:flex-end;gap:16px;");
+    var imgAssinatura=document.createElement("img");
+    imgAssinatura.alt="Assinatura do motorista";imgAssinatura.src=assinatura.toDataURL("image/png");
+    imgAssinatura.style.cssText="display:block;width:240px;height:65px;object-fit:contain;background:#fff;";
+    areaAssinatura.appendChild(imgAssinatura);
+    areaAssinatura.appendChild(elemento("span","Assinatura do motorista","padding-bottom:4px;"));
+    areaAssinatura.appendChild(elemento("span","Documento gerado em "+new Date().toLocaleString("pt-BR"),"margin-left:auto;padding-bottom:4px;color:#555;"));
+    stage.appendChild(areaAssinatura);
+  }
+  SLOTS_VEICULO.forEach(function(slot){
+    if(fotosVeiculo[slot.key])fotosAnexo.push({url:fotosVeiculo[slot.key],legenda:"Foto do veículo — "+slot.label});
+  });
+  if(fotosAnexo.length){
+    var anexo=elemento("section",undefined,"break-before:page;page-break-before:always;margin-top:12px;");
+    anexo.className="pdf-photo-appendix";
+    anexo.appendChild(elemento("h2","FOTOS DO CHECKLIST","font-size:16px;text-align:center;margin:0 0 12px;color:#1f6b4a;"));
+    var grade=elemento("table",undefined,"width:100%;border-collapse:separate;border-spacing:10px 8px;table-layout:fixed;");
+    var corpo=elemento("tbody");grade.appendChild(corpo);
+    for(var fotoIndice=0;fotoIndice<fotosAnexo.length;fotoIndice+=2){
+      var linhaFotos=elemento("tr");
+      [fotosAnexo[fotoIndice],fotosAnexo[fotoIndice+1]].forEach(function(foto){
+        var celulaFoto=elemento("td",undefined,"width:50%;border:1px solid #c5ccc8;padding:8px;vertical-align:top;text-align:center;");
+        if(foto){
+          celulaFoto.appendChild(elemento("p",foto.legenda,"margin:0 0 6px;font-size:11px;font-weight:bold;text-align:left;"));
+          var img=document.createElement("img");
+          img.alt=foto.legenda;img.src=foto.url;
+          img.style.cssText="display:block;width:100%;height:250px;object-fit:contain;";
+          celulaFoto.appendChild(img);
+        }
+        linhaFotos.appendChild(celulaFoto);
+      });
+      corpo.appendChild(linhaFotos);
+    }
+    anexo.appendChild(grade);stage.appendChild(anexo);
+  }
+  document.body.appendChild(stage);
+  return stage;
+}
+function aguardarImagens(el){
+  var imgs=Array.prototype.slice.call(el.querySelectorAll("img"));
+  return Promise.all(imgs.map(function(im){
+    if(im.complete && im.naturalWidth>0) return Promise.resolve();
+    return new Promise(function(resolve){var done=function(){resolve();};im.addEventListener("load",done,{once:true});im.addEventListener("error",done,{once:true});setTimeout(done,5000);});
+  }));
+}
+function gerarPDF(){
+  if(typeof html2pdf==="undefined") return Promise.reject(new Error("A biblioteca de PDF não carregou. Verifique a internet."));
+  var stage=prepararParaPDF();
+  var opt={margin:[7,7,7,7],image:{type:"jpeg",quality:0.92},html2canvas:{scale:1.25,useCORS:true,backgroundColor:"#ffffff",logging:false,allowTaint:false,scrollX:0,scrollY:0,windowWidth:1000},jsPDF:{unit:"mm",format:"a4",orientation:"portrait",compress:true},pagebreak:{mode:["css","legacy"],avoid:["tr"],before:[".pdf-photo-appendix"]}};
+  return aguardarImagens(stage).then(function(){return html2pdf().set(opt).from(stage).toPdf().get("pdf").then(function(pdf){
+    if(!pdf || pdf.internal.getNumberOfPages()<1) throw new Error("O PDF não contém páginas.");
+    return pdf.output("blob");
+  });}).then(function(blob){
+    if(stage.parentNode) stage.parentNode.removeChild(stage);
+    if(!blob || blob.size<1000) throw new Error("O arquivo gerado ficou vazio ou incompleto (menos de 1 KB).");
+    return blob;
+  }).catch(function(err){if(stage && stage.parentNode) stage.parentNode.removeChild(stage);throw err;});
+}
+function fallbackSalvarPDF(motivo){
+  alert("A exportação automática falhou. Seus dados continuam preenchidos. Na próxima tela, escolha Imprimir e depois ‘Salvar como PDF’ para guardar o checklist no celular.\n\nDetalhe: "+(motivo||"erro na geração"));
+  setTimeout(function(){window.print();},250);
+}
+
+function placaLimpa(){return (($('placa').value||"").toUpperCase().replace(/[^A-Z0-9_-]/g,""))||"SEM PLACA";}
+function dataArquivo(){var v=($('dataass')&&$('dataass').value)||"";var m=v.match(/^(\d{4})-(\d{2})-(\d{2})$/);if(m)return m[3]+"-"+m[2]+"-"+m[1];var d=new Date();return ("0"+d.getDate()).slice(-2)+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+d.getFullYear();}
+function nomeBase(){return "CHECKLIST - "+placaLimpa()+" - "+dataArquivo();}
+function nomeArquivoPDF(){return nomeBase()+".pdf";}
+var arquivoPDFPronto=null,versaoDadosChecklist=0;
+function registrarAlteracaoChecklist(){
+  if(arquivoPDFPronto){arquivoPDFPronto=null;}
+  versaoDadosChecklist++;
+}
+function mostrarMsg(texto){
+  var msg=$("msg");msg.textContent=texto;msg.style.display="block";
+  msg.scrollIntoView({behavior:"smooth",block:"center"});
+}
+function baixarArquivo(arquivo){
+  var conteudo=arquivo.blob||arquivo,url=URL.createObjectURL(conteudo),a=document.createElement("a");
+  a.href=url;a.download=arquivo.name||nomeArquivoPDF();a.style.display="none";document.body.appendChild(a);a.click();
+  setTimeout(function(){a.remove();URL.revokeObjectURL(url);},15000);
+}
+function criarArquivo(blob,nome){
+  return typeof File==="undefined"?{blob:blob,name:nome,type:"application/pdf"}:new File([blob],nome,{type:"application/pdf"});
+}
+function podeCompartilhar(arquivos){
+  try{return !!(navigator.share&&(!navigator.canShare||navigator.canShare({files:arquivos})));}
+  catch(err){return false;}
+}
+function compartilharPDFPronto(){
+  if(!arquivoPDFPronto)return;
+  var arquivo=arquivoPDFPronto,versao=versaoDadosChecklist;
+  function baixarComOrientacao(motivo){
+    baixarArquivo(arquivo);
+    mostrarMsg("Não foi possível abrir o compartilhamento"+(motivo?" ("+motivo+")":"")+". O PDF foi baixado; no WhatsApp toque no clipe > Documento e escolha ‘"+arquivo.name+"’.");
+  }
+  if(!podeCompartilhar([arquivo])){
+    baixarComOrientacao("este aparelho não aceita esse arquivo");
+    return;
+  }
+  var compartilhamento;
+  try{
+    compartilhamento=navigator.share({files:[arquivo],title:nomeBase(),text:nomeBase()});
+  }catch(err){
+    if(err&&err.name==="AbortError")return;
+    console.error("Falha ao compartilhar o PDF.",err);
+    baixarComOrientacao((err&&err.name)||"erro");
+    return;
+  }
+  Promise.resolve(compartilhamento).catch(function(err){
+    if(err&&err.name==="AbortError")return;
+    console.error("Falha ao compartilhar o PDF.",err);
+    if(versao!==versaoDadosChecklist){
+      mostrarMsg("Os dados foram alterados durante o compartilhamento. Gere o PDF novamente antes de compartilhar.");
+      return;
+    }
+    baixarComOrientacao((err&&err.name)||"erro");
+  });
+}
+if ($('btnCompartilhar')) {
+  $('btnCompartilhar').onclick=function(){
+    if(arquivoPDFPronto){compartilharPDFPronto();return;}
+    if(!validar())return;
+    var btn=this,txt=btn.textContent;btn.disabled=true;$('msg').style.display='none';
+    var versao=versaoDadosChecklist;
+    btn.textContent='⏳ Preparando PDF...';
+    gerarPDF().then(function(blob){
+      if(versao!==versaoDadosChecklist)throw new Error("Os dados foram alterados durante a geração. Prepare o PDF novamente.");
+      arquivoPDFPronto=criarArquivo(blob,nomeArquivoPDF());
+      btn.textContent='📤 PDF pronto para compartilhar';
+      mostrarMsg('PDF pronto. Toque novamente no botão e escolha o WhatsApp para compartilhar.');
+    }).catch(function(err){
+      console.error(err);
+      mostrarMsg("Não foi possível preparar o PDF: "+((err&&err.message)||"erro desconhecido"));
+    }).finally(function(){
+      btn.disabled=false;
+      if(!arquivoPDFPronto)btn.textContent=txt;
+    });
+  };
+}
+
+if ($('btnNovo')) {
+  $('btnNovo').onclick=function(){
+    if(!confirm("Deseja iniciar um NOVO CHECKLIST? Todos os dados, fotos, marcações e assinatura atuais serão apagados. Exporte ou salve o PDF antes de continuar.")) return;
+    registrarAlteracaoChecklist();
+    limparRespostasSalvas();
+    document.querySelectorAll('input[type="text"],input[type="number"],textarea,select').forEach(function(el){el.value="";});
+    document.querySelectorAll('input[type="radio"],input[type="checkbox"]').forEach(function(el){el.checked=false;});
+    document.querySelectorAll('.item').forEach(function(el){el.classList.remove('isnc','miss');});
+    Object.keys(fotos).forEach(function(k){fotos[k]=[];desenha(k);});
+    Object.keys(fotosVeiculo).forEach(function(k){fotosVeiculo[k]=null;});
+    desenhaFotosVeiculo();
+    var h=new Date();h=new Date(h.getTime()-h.getTimezoneOffset()*60000).toISOString().slice(0,10);$('data').value=h;$('dataass').value=h;
+    $('obs').value='';$('msg').style.display='none';$('cardFotosVeiculo').classList.remove('miss');
+    assinou=false;ajusta();
+    window.scrollTo({top:0,behavior:'smooth'});
+    if(typeof salvarAgora==='function'){salvarAgora().catch(function(){})}
+  };
+}
+
+var CAMPOS=["placa","locadora","modelo","data","contrato","km","motorista","cpf","obs","dataass"];
+var restaurado=false,timerSalvar=null;
+function abrirDB(){return new Promise(function(res,rej){
+  if(!window.indexedDB){rej(new Error("IndexedDB indisponível"));return}
+  var r=indexedDB.open("checklist-retirada-veiculo",1);
+  r.onupgradeneeded=function(){r.result.createObjectStore("estado")};
+  r.onsuccess=function(){res(r.result)};
+  r.onerror=function(){rej(r.error)};
+});}
+function idbOp(modo,fn){return abrirDB().then(function(db){return new Promise(function(res,rej){
+  var tx=db.transaction("estado",modo),st=tx.objectStore("estado"),req=fn(st);
+  tx.oncomplete=function(){res(req&&req.result);db.close()};
+  tx.onerror=function(){rej(tx.error);db.close()};
+  tx.onabort=function(){rej(tx.error);db.close()};
+});});}
+function idbGet(){return idbOp("readonly",function(s){return s.get("atual")})}
+function idbPut(v){return idbOp("readwrite",function(s){return s.put(v,"atual")})}
+function idbDel(){return idbOp("readwrite",function(s){return s.delete("atual")})}
+function coletarEstado(){
+  var e={campos:{},respostas:{},problemas:{},fotos:{},fotosVeiculo:{},assinatura:null},vazio=true;
+  CAMPOS.forEach(function(id){
+    e.campos[id]=$(id).value;
+    if(id!=="dataass"&&id!=="data"&&$(id).value.trim()) vazio=false;
+  });
+  for(var i=1;i<=n;i++){
+    var m=$("it"+i).querySelector("input[type=radio]:checked");
+    if(m){e.respostas[i]=m.value;vazio=false}
+    var t=$("ob"+i).value;
+    if(t.trim()){e.problemas[i]=t;vazio=false}
+    if(fotos[i]&&fotos[i].length){e.fotos[i]=fotos[i].slice();vazio=false}
+  }
+  Object.keys(fotosVeiculo).forEach(function(k){
+    if(fotosVeiculo[k]){e.fotosVeiculo[k]=fotosVeiculo[k];vazio=false}
+  });
+  if(assinou){try{e.assinatura=cv.toDataURL("image/png");vazio=false}catch(_){} }
+  if(document.querySelector('input[name="tanque"]:checked')){e.tanque=document.querySelector('input[name="tanque"]:checked').value;vazio=false;}
+  e.vazio=vazio;
+  return e;
+}
+function salvarAgora(){
+  if(!restaurado) return Promise.resolve();
+  clearTimeout(timerSalvar);timerSalvar=null;
+  var e=coletarEstado();
+  var op=e.vazio?idbDel():idbPut(e);
+  return op.catch(function(err){informarFalhaPersistencia(err)});
+}
+function agendarSalvar(){
+  if(!restaurado) return;
+  clearTimeout(timerSalvar);
+  timerSalvar=setTimeout(salvarAgora,400);
+}
+function restaurarEstado(){
+  return idbGet().then(function(e){
+    if(!e) return;
+    var c=e.campos||{};
+    CAMPOS.forEach(function(id){
+      if(c[id]!=null&&c[id]!=="") $(id).value=c[id];
+    });
+    var tanqueSel=e.tanque;
+    if(tanqueSel){
+      var node=document.querySelector('input[name="tanque"][value="'+tanqueSel+'"]');
+      if(node) node.checked=true;
+    }
+    for(var i=1;i<=n;i++){
+      var item=$("it"+i),v=e.respostas&&e.respostas[i];
+      if(v){
+        var m=item.querySelector('input[value="'+v+'"]');
+        if(m){m.checked=true;item.classList.toggle("isnc",v==="NC")}
+      }
+      if(e.problemas&&e.problemas[i]) $("ob"+i).value=e.problemas[i];
+    }
+    Object.keys(e.fotos||{}).forEach(function(k){fotos[k]=e.fotos[k];desenha(k)});
+    Object.keys(e.fotosVeiculo||{}).forEach(function(k){fotosVeiculo[k]=e.fotosVeiculo[k]});
+    desenhaFotosVeiculo();
+    if(e.assinatura){
+      return new Promise(function(res){
+        var im=new Image();
+        im.onload=function(){
+          var r=cv.getBoundingClientRect();
+          cx.drawImage(im,0,0,r.width,r.height);
+          assinou=true;res();
+        };
+        im.onerror=function(){res()};
+        im.src=e.assinatura;
+      });
+    }
+  });
+}
+
+var _desenha=desenha;
+desenha=function(k){_desenha(k);agendarSalvar();};
+var _desenhaFV=desenhaFotosVeiculo;
+desenhaFotosVeiculo=function(){var r=_desenhaFV();agendarSalvar();return r;};
+document.addEventListener("input",function(){registrarAlteracaoChecklist();agendarSalvar();salvarRespostas();});
+document.addEventListener("change",function(){registrarAlteracaoChecklist();agendarSalvar();salvarRespostas();});
+cv.addEventListener("pointerup",function(){agendarSalvar();salvarAgora();});
+$("limpa").addEventListener("click",function(){agendarSalvar();salvarAgora();});
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")salvarAgora()});
+window.addEventListener("pagehide",salvarAgora);
+if(navigator.storage&&navigator.storage.persist){navigator.storage.persist().catch(function(){})}
+
+(function(){
+  for(var i=1;i<=n;i++){desenha(i);}
+  restaurarRespostas();
+  desenhaFotosVeiculo();
+})();
+restaurarEstado().catch(function(err){console.warn("Sem estado salvo",err)}).then(function(){restaurado=true;});
+</script>
+</body>
+</html>
