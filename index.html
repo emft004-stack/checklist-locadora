@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Checklist de Retirada de Veículo Alugado – Emflortec</title>
+<title>Checklist de Veículo da Locadora – Emflortec</title>
 <meta name="theme-color" content="#1f6b4a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Checklist">
@@ -28,7 +28,7 @@ header h1{font-size:1.15rem;margin:2px 0 0}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media (max-width:520px){.grid{grid-template-columns:1fr}}
 label.f{display:block;font-size:.8rem;color:var(--mut);font-weight:600}
-input[type=text],input[type=date],input[type=number],textarea{width:100%;margin-top:3px;padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--inp);color:var(--tx);font:inherit}
+input[type=text],input[type=date],input[type=number],select,textarea{width:100%;margin-top:3px;padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--inp);color:var(--tx);font:inherit}
 textarea{min-height:70px;resize:vertical}
 .hint{font-size:.85rem;color:var(--mut);margin:0}
 h2{font-size:.95rem;margin:18px 0 8px;color:var(--ac);text-transform:uppercase;letter-spacing:.03em}
@@ -112,15 +112,16 @@ h2{font-size:.95rem;margin:18px 0 8px;color:var(--ac);text-transform:uppercase;l
 </head>
 <body>
 <div class="wrap">
-<header><small>EMFLORTEC ENGENHARIA · VERSÃO 1.1</small><h1>Checklist – Retirada de Veículo Alugado</h1></header>
+<header><small>EMFLORTEC ENGENHARIA · VERSÃO 1.2</small><h1>Checklist de Veículo da Locadora</h1></header>
 <div class="install-banner" id="installBanner" aria-live="polite">
   <strong>Instalar este checklist no celular</strong>
   <button type="button" class="btn pri" id="installAppBtn">Instalar app</button>
 </div>
-<div class="printtitle"><strong>EMFLORTEC ENGENHARIA</strong><br>CHECKLIST – RETIRADA DE VEÍCULO ALUGADO</div>
+<div class="printtitle"><strong>EMFLORTEC ENGENHARIA</strong><br>CHECKLIST – <span id="printTipoOperacao">RETIRADA / DEVOLUÇÃO</span> DA LOCADORA</div>
 
 <div class="card">
  <div class="grid">
+  <label class="f">Operação da locadora *<select id="tipoOperacao" required><option value="">Selecione</option><option value="retirada">Retirada</option><option value="devolucao">Devolução</option></select></label>
   <label class="f">Placa<input type="text" id="placa" autocapitalize="characters"></label>
   <label class="f">Modelo do veículo<input type="text" id="modelo"></label>
   <label class="f">Quilometragem<input type="number" id="km" inputmode="numeric"></label>
@@ -128,7 +129,7 @@ h2{font-size:.95rem;margin:18px 0 8px;color:var(--ac);text-transform:uppercase;l
   <label class="f">Contrato<input type="text" id="contrato"></label>
   <label class="f">Motorista<input type="text" id="motorista"></label>
   <label class="f">CPF do motorista *<input type="text" id="cpf" inputmode="numeric" placeholder="000.000.000-00" maxlength="14"></label>
-  <label class="f">Data da retirada<input type="date" id="data"></label>
+  <label class="f">Data da operação<input type="date" id="data"></label>
   <div class="tanque-wrap">
    <label class="f">Nível do tanque de combustível *</label>
    <div class="tanque-opts" id="tanque">
@@ -144,7 +145,7 @@ h2{font-size:.95rem;margin:18px 0 8px;color:var(--ac);text-transform:uppercase;l
 
 <div class="card" id="cardFotosVeiculo">
  <h2 style="margin-top:0">📸 Fotos obrigatórias do veículo (4 lados)</h2>
- <p class="hint" style="margin-bottom:0">Tire as 4 fotos do veículo antes de sair da locadora. Toque em cada campo para adicionar a foto correspondente.</p>
+ <p class="hint" style="margin-bottom:0">Tire as 4 fotos do veículo. Toque em cada campo para adicionar a foto correspondente.</p>
  <div class="fotos-veiculo-grid" id="fotosVeiculoGrid"></div>
  <div class="aviso-obrig" id="avisoFotosVeiculo">⚠️ As 4 fotos do veículo são obrigatórias (dianteira, traseira, lateral esquerda e lateral direita).</div>
 </div>
@@ -222,6 +223,17 @@ var SEC=[
 ];
 
 var $=function(i){return document.getElementById(i)};
+function nomeOperacao(){
+ var valor=$("tipoOperacao").value;
+ if(valor==="retirada")return "RETIRADA";
+ if(valor==="devolucao")return "DEVOLUÇÃO";
+ return "RETIRADA / DEVOLUÇÃO";
+}
+function atualizarTituloOperacao(){
+ var titulo=$("printTipoOperacao");
+ if(titulo)titulo.textContent=nomeOperacao();
+}
+$("tipoOperacao").addEventListener("change",atualizarTituloOperacao);
 var fotos={};
 var fotosVeiculo={dianteira:null, traseira:null, lateral_esq:null, lateral_dir:null};
 var CHAVE_RESPOSTAS="checklist-retirada-veiculo-respostas";
@@ -430,6 +442,7 @@ function validar(){
  var tanqueSel=document.querySelector('input[name="tanque"]:checked');
  var extra=[];
  if(!tanqueSel)extra.push("nível do tanque");
+ if(!$("tipoOperacao").value)extra.push("tipo de operação (retirada ou devolução)");
  if(!$('placa').value.trim())extra.push("placa");
  if(!$('motorista').value.trim())extra.push("nome do motorista");
  if(!$('cpf').value.trim())extra.push("CPF do motorista");
@@ -470,13 +483,13 @@ function prepararParaPDF(){
     thead.appendChild(tr);t.appendChild(thead);t.appendChild(elemento("tbody"));
     return t;
   }
-  stage.appendChild(elemento("h1","EMFLORTEC ENGENHARIA | CHECKLIST – RETIRADA DE VEÍCULO ALUGADO","font-size:18px;text-align:center;margin:0 0 10px;color:#1f6b4a;"));
+  stage.appendChild(elemento("h1","EMFLORTEC ENGENHARIA | CHECKLIST – "+nomeOperacao()+" DA LOCADORA","font-size:18px;text-align:center;margin:0 0 10px;color:#1f6b4a;"));
   var dados=tabela(["Identificação","Dados","Identificação","Dados","Identificação","Dados"]);
   [
-    ["Placa",$("placa").value.trim()||"-","Modelo do veículo",$("modelo").value.trim()||"-","Quilometragem",$("km").value||"-"],
-    ["Locadora",$("locadora").value.trim()||"-","Contrato",$("contrato").value.trim()||"-","Motorista",$("motorista").value.trim()||"-"],
-    ["CPF",$("cpf").value.trim()||"-","Data da retirada",$("data").value||"-","Tanque",document.querySelector('input[name="tanque"]:checked')?document.querySelector('input[name="tanque"]:checked').value:"-"],
-    ["Data da assinatura",$("dataass").value||"-","Observações","-","",""]
+    ["Operação",nomeOperacao(),"Placa",$("placa").value.trim()||"-","Modelo do veículo",$("modelo").value.trim()||"-"],
+    ["Quilometragem",$("km").value||"-","Locadora",$("locadora").value.trim()||"-","Contrato",$("contrato").value.trim()||"-"],
+    ["Motorista",$("motorista").value.trim()||"-","CPF",$("cpf").value.trim()||"-","Data", $("data").value||"-"],
+    ["Tanque",document.querySelector('input[name="tanque"]:checked')?document.querySelector('input[name="tanque"]:checked').value:"-","Data da assinatura",$("dataass").value||"-","Observações","-"],
   ].forEach(function(valores){
     var tr=elemento("tr");
     valores.forEach(function(valor,i){
@@ -584,7 +597,10 @@ function fallbackSalvarPDF(motivo){
 
 function placaLimpa(){return (($('placa').value||"").toUpperCase().replace(/[^A-Z0-9_-]/g,""))||"SEM PLACA";}
 function dataArquivo(){var v=($('dataass')&&$('dataass').value)||"";var m=v.match(/^(\d{4})-(\d{2})-(\d{2})$/);if(m)return m[3]+"-"+m[2]+"-"+m[1];var d=new Date();return ("0"+d.getDate()).slice(-2)+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+d.getFullYear();}
-function nomeBase(){return "CHECKLIST - "+placaLimpa()+" - "+dataArquivo();}
+function nomeBase(){
+  var operacao=$("tipoOperacao").value==="devolucao"?"DEVOLUÇÃO":"RETIRADA";
+  return "CHECKLIST - "+operacao+" - "+placaLimpa()+" - "+dataArquivo();
+}
 function nomeArquivoPDF(){return nomeBase()+".pdf";}
 var arquivoPDFPronto=null,versaoDadosChecklist=0;
 function registrarAlteracaoChecklist(){
@@ -671,6 +687,7 @@ if ($('btnNovo')) {
     Object.keys(fotosVeiculo).forEach(function(k){fotosVeiculo[k]=null;});
     desenhaFotosVeiculo();
     var h=new Date();h=new Date(h.getTime()-h.getTimezoneOffset()*60000).toISOString().slice(0,10);$('data').value=h;$('dataass').value=h;
+    atualizarTituloOperacao();
     $('obs').value='';$('msg').style.display='none';$('cardFotosVeiculo').classList.remove('miss');
     assinou=false;ajusta();
     window.scrollTo({top:0,behavior:'smooth'});
@@ -678,7 +695,7 @@ if ($('btnNovo')) {
   };
 }
 
-var CAMPOS=["placa","locadora","modelo","data","contrato","km","motorista","cpf","obs","dataass"];
+var CAMPOS=["tipoOperacao","placa","locadora","modelo","data","contrato","km","motorista","cpf","obs","dataass"];
 var restaurado=false,timerSalvar=null;
 function abrirDB(){return new Promise(function(res,rej){
   if(!window.indexedDB){rej(new Error("IndexedDB indisponível"));return}
@@ -736,6 +753,7 @@ function restaurarEstado(){
     CAMPOS.forEach(function(id){
       if(c[id]!=null&&c[id]!=="") $(id).value=c[id];
     });
+    atualizarTituloOperacao();
     var tanqueSel=e.tanque;
     if(tanqueSel){
       var node=document.querySelector('input[name="tanque"][value="'+tanqueSel+'"]');
