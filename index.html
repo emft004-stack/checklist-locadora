@@ -48,8 +48,6 @@ h2{font-size:.95rem;margin:18px 0 8px;color:var(--ac);text-transform:uppercase;l
 .opts input:focus-visible+span{outline:3px solid var(--ac);outline-offset:2px}
 .prob{display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--bd)}
 .item.isnc .prob{display:block}
-.fotoarea{display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--bd)}
-.item.foto-obrig .fotoarea{display:block}
 .btn{display:inline-block;padding:10px 14px;border-radius:8px;border:1px solid var(--ac);background:transparent;color:var(--ac);font:inherit;font-weight:600;cursor:pointer}
 .btn.pri{background:var(--ac);color:#fff;-webkit-print-color-adjust:exact}
 .btn.share{background:#25D366;border-color:#25D366;color:#fff}
@@ -101,7 +99,6 @@ h2{font-size:.95rem;margin:18px 0 8px;color:var(--ac);text-transform:uppercase;l
  .item,.foto-slot{break-inside:avoid;page-break-inside:avoid}
  .prob{display:block}
  .item:not(.isnc) .prob{display:none}
- .item.foto-obrig .fotoarea{display:block}
  input[type=text],input[type=date],input[type=number],textarea{background:#fff!important;color:#000!important;border:0;border-bottom:1px solid #999;border-radius:0;padding:2px 0}
  .sigbox{border:1px solid #000}
  .tanque-opts span{background:#fff!important;color:#000!important;border-color:#999}
@@ -112,7 +109,7 @@ h2{font-size:.95rem;margin:18px 0 8px;color:var(--ac);text-transform:uppercase;l
 </head>
 <body>
 <div class="wrap">
-<header><small>EMFLORTEC ENGENHARIA · VERSÃO 1.2</small><h1>Checklist de Veículo da Locadora</h1></header>
+<header><small>EMFLORTEC ENGENHARIA · VERSÃO 1.3</small><h1>Checklist de Veículo da Locadora</h1></header>
 <div class="install-banner" id="installBanner" aria-live="polite">
   <strong>Instalar este checklist no celular</strong>
   <button type="button" class="btn pri" id="installAppBtn">Instalar app</button>
@@ -244,15 +241,13 @@ SEC.forEach(function(s){
  html+="<h2>"+s[0]+"</h2>";
  s[1].forEach(function(t){
   n++;
-  var isLataria = t.indexOf("Lataria")>=0;
-  html+='<div class="item'+(isLataria?' foto-obrig':'')+'" id="it'+n+'" data-n="'+n+'"'+(isLataria?' data-foto-obrig="1"':'')+'>'+
+  html+='<div class="item" id="it'+n+'" data-n="'+n+'">'+
   '<div class="t"><span class="n">'+n+'</span><span>'+t+'</span></div>'+
   '<div class="opts">'+["ok:OK","nc:NC","na:N/A"].map(function(o){var p=o.split(":");return '<label><input type="radio" name="r'+n+'" value="'+p[1]+'"><span class="'+p[0]+'">'+p[1]+'</span></label>'}).join("")+'</div>'+
-  '<div class="prob"><label class="f">Problema encontrado<textarea id="ob'+n+'" placeholder="Descreva o problema"></textarea></label></div>'+
-  (isLataria?'<div class="fotoarea"><label class="f">Fotos das avarias da lataria (opcional — adicione se houver avaria)</label>'+
-  '<div class="thumbs" id="th'+n+'"></div>'+
-  '<div class="add" style="margin-top:8px"><button type="button" class="btn" data-add="'+n+'">📷 Adicionar fotos de avarias</button>'+
-  '<input type="file" accept="image/*" capture="environment" multiple hidden id="fi'+n+'"></div></div>':'')+
+  '<div class="prob"><label class="f">Problema encontrado<textarea id="ob'+n+'" placeholder="Descreva o problema"></textarea></label>'+
+  '<div class="item-fotos" style="margin-top:8px"><button type="button" class="btn add" data-add="'+n+'">📷 Adicionar foto (opcional)</button>'+
+  '<input type="file" accept="image/*" capture="environment" multiple hidden id="fi'+n+'">'+
+  '<div class="thumbs" id="th'+n+'"></div></div></div>'+
   '</div>';
  });
 });
