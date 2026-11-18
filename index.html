@@ -117,7 +117,7 @@ h2{font-size:.95rem;margin:18px 0 8px;color:var(--ac);text-transform:uppercase;l
 </head>
 <body>
 <div class="wrap">
-<header><small>EMFLORTEC ENGENHARIA · VERSÃO 1.3</small><h1>Checklist de Veículo da Locadora</h1></header>
+<header><small>EMFLORTEC ENGENHARIA · VERSÃO 1.4</small><h1>Checklist de Veículo da Locadora</h1></header>
 <div class="install-banner" id="installBanner" aria-live="polite">
   <strong>Instalar este checklist no celular</strong>
   <button type="button" class="btn pri" id="installAppBtn">Instalar app</button>
@@ -179,13 +179,16 @@ h2{font-size:.95rem;margin:18px 0 8px;color:var(--ac);text-transform:uppercase;l
 
 <div class="actions">
   <button type="button" class="btn share" id="btnCompartilhar">📄 Compartilhar PDF pelo WhatsApp</button>
+  <button type="button" class="btn pri" id="btnEnviarDrive">☁️ Enviar para Google Drive</button>
   <button type="button" class="btn sec" id="btnNovo">🆕 Novo Checklist</button>
 </div>
 <p class="hint noprint" style="margin-top:8px">Toque em “Compartilhar PDF pelo WhatsApp”. Após a preparação do arquivo, toque novamente no mesmo botão e escolha o WhatsApp. Use “Novo Checklist” somente quando quiser limpar os dados e começar outro.</p>
+<p class="hint noprint" style="margin-top:8px">O envio ao Drive é aberto: qualquer pessoa com acesso a este checklist poderá enviar dados e fotos para a conta que configurou o serviço.</p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
+var GOOGLE_APPS_SCRIPT_URL="https://script.google.com/macros/s/AKfycbygm98NS7ZvosWZ3MKAPkuHcdq6h8HMp9-l1AXfgcW6rss9957wd27rWrgpR7mH2m12Gg/exec";
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function () {
     navigator.serviceWorker.register('./service-worker.js').catch(function () {});
@@ -652,6 +655,123 @@ function compartilharPDFPronto(){
     }
     baixarComOrientacao((err&&err.name)||"erro");
   });
+}
+function blobComoDataURL(blob){
+  return new Promise(function(resolve,reject){
+    var leitor=new FileReader();
+    leitor.onload=function(){resolve(leitor.result)};
+    leitor.onerror=function(){reject(leitor.error||new Error("Não foi possível preparar um arquivo para o Drive."))};
+    leitor.readAsDataURL(blob);
+  });
+}
+function montarEnvioDrive(pdfBlob){
+  var anexos=[];
+  function incluir(nome,legenda,dataURL){
+    if(!dataURL)return;
+    var separador=dataURL.indexOf(",");
+    if(separador<0)throw new Error("Uma das fotos está em formato inválido.");
+    anexos.push({name:nome,mimeType:dataURL.slice(5,dataURL.indexOf(";")),caption:legenda,data:dataURL.slice(separador+1)});
+  }
+  SLOTS_VEICULO.forEach(function(slot){
+    incluir(slot.key+".jpg","Veículo - "+slot.label,fotosVeiculo[slot.key]);
+  });
+  for(var i=1;i<=n;i++){
+    (fotos[i]||[]).forEach(function(url,indice){incluir("item-"+i+"-foto-"+(indice+1)+".jpg","Item "+i+" - foto "+(indice+1)+" - "+$("it"+i).querySelector(".t span:last-child").textContent.trim(),url)});
+  }
+  if(assinou)incluir("assinatura.png","Assinatura do motorista",cv.toDataURL("image/png"));
+  return blobComoDataURL(pdfBlob).then(function(pdfURL){
+    incluir(nomeArquivoPDF(),"PDF do checklist",pdfURL);
+    var respostas=[];
+    for(var itemN=1;itemN<=n;itemN++){
+      var item=$("it"+itemN),marcada=item.querySelector('input[type="radio"]:checked');
+      respostas.push({numero:itemN,item:item.querySelector(".t span:last-child").textContent.trim(),resultado:marcada?marcada.value:"-",problema:$("ob"+itemN).value.trim()});
+    }
+    var tanque=document.querySelector('input[name="tanque"]:checked');
+    var payload={
+      version:1,
+      requestId:(window.crypto&&crypto.randomUUID)?crypto.randomUUID():(Date.now()+"-"+Math.random().toString(36).slice(2)),
+      dados:{
+        operacao:nomeOperacao(),
+        placa:$("placa").value.trim(),
+        modelo:$("modelo").value.trim(),
+        quilometragem:$("km").value,
+        locadora:$("locadora").value.trim(),
+        contrato:$("contrato").value.trim(),
+        motorista:$("motorista").value.trim(),
+        cpf:$("cpf").value.trim(),
+        data:$("data").value,
+        tanque:tanque?tanque.value:"",
+        observacoes:$("obs").value.trim(),
+        dataAssinatura:$("dataass").value
+      },
+      checklist:respostas,
+      attachments:anexos
+    };
+    var json=JSON.stringify(payload);
+    if(new Blob([json]).size>8*1024*1024)throw new Error("O envio ultrapassou 8 MB. Remova algumas fotos e tente novamente.");
+    return payload;
+  });
+}
+function enviarParaDrive(payload){
+  if(!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec$/.test(GOOGLE_APPS_SCRIPT_URL)){
+    return Promise.reject(new Error("O envio ao Drive ainda não foi configurado. Publique o Apps Script e informe a URL terminada em /exec no código do checklist."));
+  }
+  return new Promise(function(resolve,reject){
+    var nomeFrame="driveUpload_"+payload.requestId.replace(/[^a-zA-Z0-9_]/g,"");
+    var frame=document.createElement("iframe"),form=document.createElement("form"),campo=document.createElement("textarea");
+    var encerrado=false,temporizador;
+    frame.name=nomeFrame;frame.style.display="none";frame.setAttribute("aria-hidden","true");
+    form.method="post";form.action=GOOGLE_APPS_SCRIPT_URL;form.target=nomeFrame;form.style.display="none";
+    campo.name="payload";campo.value=JSON.stringify(payload);form.appendChild(campo);
+    function limpar(){
+      window.removeEventListener("message",receber);
+      clearTimeout(temporizador);
+      if(frame.parentNode)frame.parentNode.removeChild(frame);
+      if(form.parentNode)form.parentNode.removeChild(form);
+    }
+    function receber(event){
+      var host="";
+      try{host=new URL(event.origin).hostname}catch(_){return}
+      if(event.source!==frame.contentWindow||!(host==="script.google.com"||host.endsWith(".googleusercontent.com")))return;
+      var resposta=event.data;
+      if(!resposta||resposta.type!=="checklist-drive-result"||resposta.requestId!==payload.requestId)return;
+      if(encerrado)return;
+      encerrado=true;limpar();
+      if(resposta.ok)resolve(resposta);
+      else reject(new Error(resposta.error||"O Google Apps Script não conseguiu salvar o checklist."));
+    }
+    window.addEventListener("message",receber);
+    temporizador=setTimeout(function(){
+      if(encerrado)return;
+      encerrado=true;limpar();
+      reject(new Error("Não foi possível confirmar o envio. Confira a planilha e a pasta do Drive antes de tentar novamente."));
+    },90000);
+    document.body.appendChild(frame);document.body.appendChild(form);
+    try{form.submit()}catch(err){encerrado=true;limpar();reject(err)}
+  });
+}
+if($("btnEnviarDrive")){
+  $("btnEnviarDrive").onclick=function(){
+    if(!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec$/.test(GOOGLE_APPS_SCRIPT_URL)){
+      mostrarMsg("O envio ao Drive ainda não foi configurado. Publique o Apps Script e informe a URL terminada em /exec no código do checklist.");
+      return;
+    }
+    if(!validar())return;
+    var botao=this,texto=botao.textContent,versao=versaoDadosChecklist;
+    botao.disabled=true;$("msg").style.display="none";botao.textContent="⏳ Preparando envio...";
+    gerarPDF().then(function(pdfBlob){
+      if(versao!==versaoDadosChecklist)throw new Error("Os dados mudaram durante a preparação. Toque em enviar novamente.");
+      return montarEnvioDrive(pdfBlob);
+    }).then(function(payload){
+      botao.textContent="☁️ Enviando para o Google...";
+      return enviarParaDrive(payload);
+    }).then(function(resposta){
+      mostrarMsg("Checklist, PDF e fotos enviados para o Drive. Planilha: "+resposta.spreadsheetUrl+" | Pasta: "+resposta.folderUrl);
+    }).catch(function(err){
+      console.error("Falha ao enviar checklist ao Google Drive.",err);
+      mostrarMsg("Não foi possível confirmar o envio ao Google Drive: "+((err&&err.message)||"erro desconhecido"));
+    }).finally(function(){botao.disabled=false;botao.textContent=texto;});
+  };
 }
 if ($('btnCompartilhar')) {
   $('btnCompartilhar').onclick=function(){
