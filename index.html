@@ -55,7 +55,7 @@ h2{font-size:.95rem;margin:18px 0 8px;color:var(--ac);text-transform:uppercase;l
 .btn:disabled{opacity:.6;cursor:not-allowed}
 .thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 .thumb{position:relative;width:96px;height:96px}
-.thumb img{width:100%;height:100%;object-fit:cover;border-radius:8px;border:1px solid var(--bd)}
+.thumb img{width:100%;height:100%;object-fit:contain;border-radius:8px;border:1px solid var(--bd)}
 .thumb button{position:absolute;top:-6px;right:-6px;width:26px;height:26px;border-radius:50%;border:0;background:var(--nc);color:#fff;font-size:16px;line-height:1;cursor:pointer}
 .aviso-obrig{display:none;margin-top:8px;padding:8px;border-radius:6px;background:color-mix(in srgb,var(--nc) 15%,transparent);color:var(--nc);font-weight:600;font-size:.8rem}
 .aviso-obrig.show{display:block}
@@ -81,7 +81,7 @@ h2{font-size:.95rem;margin:18px 0 8px;color:var(--ac);text-transform:uppercase;l
 @media (max-width:520px){.fotos-veiculo-grid{grid-template-columns:1fr 1fr}}
 .foto-slot{border:2px dashed var(--bd);border-radius:10px;padding:10px;text-align:center;min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
 .foto-slot.tem-foto{border-style:solid;border-color:var(--ok)}
-.foto-slot img{width:100%;height:100px;object-fit:cover;border-radius:6px;margin-bottom:6px}
+.foto-slot img{width:100%;height:100px;object-fit:contain;border-radius:6px;margin-bottom:6px}
 .foto-slot .label-slot{font-size:.8rem;font-weight:700;color:var(--mut);margin-bottom:6px}
 .foto-slot .btn-add-foto{font-size:.75rem;padding:6px 10px}
 .foto-slot .rm-slot{position:absolute;top:-6px;right:-6px;width:24px;height:24px;border-radius:50%;border:0;background:var(--nc);color:#fff;font-size:14px;line-height:1;cursor:pointer;display:none}
@@ -117,7 +117,7 @@ h2{font-size:.95rem;margin:18px 0 8px;color:var(--ac);text-transform:uppercase;l
 </head>
 <body>
 <div class="wrap">
-<header><small>EMFLORTEC ENGENHARIA · VERSÃO 1.4</small><h1>Checklist de Veículo da Locadora</h1></header>
+<header><small>EMFLORTEC ENGENHARIA · VERSÃO 1.5</small><h1>Checklist de Veículo da Locadora</h1></header>
 <div class="install-banner" id="installBanner" aria-live="polite">
   <strong>Instalar este checklist no celular</strong>
   <button type="button" class="btn pri" id="installAppBtn">Instalar app</button>
@@ -150,7 +150,7 @@ h2{font-size:.95rem;margin:18px 0 8px;color:var(--ac);text-transform:uppercase;l
 
 <div class="card" id="cardFotosVeiculo">
  <h2 style="margin-top:0">📸 Fotos obrigatórias do veículo (4 lados)</h2>
- <p class="hint" style="margin-bottom:0">Tire as 4 fotos do veículo. Toque em cada campo para adicionar a foto correspondente.</p>
+ <p class="hint" style="margin-bottom:0">Tire as 4 fotos do veículo. Toque em cada campo para adicionar a foto correspondente. As fotos mantêm a resolução e a proporção capturadas; no PDF, são apenas ajustadas para caber na página.</p>
  <div class="fotos-veiculo-grid" id="fotosVeiculoGrid"></div>
  <div class="aviso-obrig" id="avisoFotosVeiculo">⚠️ As 4 fotos do veículo são obrigatórias (dianteira, traseira, lateral esquerda e lateral direita).</div>
 </div>
@@ -355,17 +355,26 @@ function carimbo(c,gps,quando){
  x.fillText(l1,pad,c.height-h+pad);
  x.fillText(l2,pad,c.height-h+pad*2+fs);
 }
-function comprime(file,cb,gps,quando){
+function processaFoto(file,cb,gps,quando){
  var rd=new FileReader();
+ function falha(err){
+  console.error("Não foi possível processar a foto na resolução original.",err);
+  mostrarMsg("Não foi possível processar esta foto. Tente novamente ou use uma imagem menor.");
+ }
+ rd.onerror=function(){falha(rd.error||new Error("Falha ao ler a foto."))};
  rd.onload=function(){
   var im=new Image();
   im.onload=function(){
-   var m=1100,s=Math.min(1,m/Math.max(im.width,im.height));
-   var c=document.createElement("canvas");c.width=im.width*s;c.height=im.height*s;
-   c.getContext("2d").drawImage(im,0,0,c.width,c.height);
-   carimbo(c,gps,quando);
-   cb(c.toDataURL("image/jpeg",0.72));
+   try{
+     var c=document.createElement("canvas");c.width=im.naturalWidth;c.height=im.naturalHeight;
+     c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+     carimbo(c,gps,quando);
+     var foto=c.toDataURL("image/jpeg",0.9);
+     if(foto==="data:,")throw new Error("O navegador não conseguiu exportar a imagem completa.");
+     cb(foto);
+   }catch(err){falha(err)}
   };
+  im.onerror=function(){falha(new Error("O navegador não conseguiu abrir a foto."))};
   im.src=rd.result;
  };
  rd.readAsDataURL(file);
@@ -386,13 +395,13 @@ document.addEventListener("change",function(e){
    var key=t.id.slice(3);
    var arq=t.files[0],quando=dataHoraAgora();
    t.value="";
-   pegaGPS().then(function(gps){comprime(arq,function(u){fotosVeiculo[key]=u;desenhaFotosVeiculo();registrarAlteracaoChecklist();salvarAgora();},gps,quando)});
+   pegaGPS().then(function(gps){processaFoto(arq,function(u){fotosVeiculo[key]=u;desenhaFotosVeiculo();registrarAlteracaoChecklist();salvarAgora();},gps,quando)});
    return;
   }
   var k=t.id.slice(2),arquivos=Array.prototype.slice.call(t.files),quando=dataHoraAgora();
   t.value="";
   pegaGPS().then(function(gps){
-   arquivos.forEach(function(f){comprime(f,function(u){(fotos[k]=fotos[k]||[]).push(u);desenha(k);registrarAlteracaoChecklist();salvarAgora();},gps,quando)});
+   arquivos.forEach(function(f){processaFoto(f,function(u){(fotos[k]=fotos[k]||[]).push(u);desenha(k);registrarAlteracaoChecklist();salvarAgora();},gps,quando)});
   });
  }
 });
@@ -665,12 +674,16 @@ function blobComoDataURL(blob){
   });
 }
 function montarEnvioDrive(pdfBlob){
-  var anexos=[];
+  var anexos=[],totalBytesAnexos=0;
   function incluir(nome,legenda,dataURL){
     if(!dataURL)return;
     var separador=dataURL.indexOf(",");
     if(separador<0)throw new Error("Uma das fotos está em formato inválido.");
-    anexos.push({name:nome,mimeType:dataURL.slice(5,dataURL.indexOf(";")),caption:legenda,data:dataURL.slice(separador+1)});
+    var dados=dataURL.slice(separador+1),bytes=Math.floor(dados.length*3/4)-(dados.endsWith("==")?2:(dados.endsWith("=")?1:0));
+    if(bytes>12*1024*1024)throw new Error("Um arquivo excede 12 MB. Reduza ou remova essa foto antes de enviar.");
+    totalBytesAnexos+=bytes;
+    if(totalBytesAnexos>20*1024*1024)throw new Error("Os arquivos ultrapassam 20 MB no total. Remova algumas fotos antes de enviar.");
+    anexos.push({name:nome,mimeType:dataURL.slice(5,dataURL.indexOf(";")),caption:legenda,data:dados});
   }
   SLOTS_VEICULO.forEach(function(slot){
     incluir(slot.key+".jpg","Veículo - "+slot.label,fotosVeiculo[slot.key]);
@@ -708,7 +721,7 @@ function montarEnvioDrive(pdfBlob){
       attachments:anexos
     };
     var json=JSON.stringify(payload);
-    if(new Blob([json]).size>8*1024*1024)throw new Error("O envio ultrapassou 8 MB. Remova algumas fotos e tente novamente.");
+    if(new Blob([json]).size>30*1024*1024)throw new Error("O envio ultrapassou 30 MB. Remova algumas fotos e tente novamente.");
     return payload;
   });
 }
