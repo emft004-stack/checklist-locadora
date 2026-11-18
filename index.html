@@ -117,7 +117,7 @@ h2{font-size:.95rem;margin:18px 0 8px;color:var(--ac);text-transform:uppercase;l
 </head>
 <body>
 <div class="wrap">
-<header><small>EMFLORTEC ENGENHARIA · VERSÃO 1.5</small><h1>Checklist de Veículo da Locadora</h1></header>
+<header><small>EMFLORTEC ENGENHARIA · VERSÃO 1.6</small><h1>Checklist de Veículo da Locadora</h1></header>
 <div class="install-banner" id="installBanner" aria-live="polite">
   <strong>Instalar este checklist no celular</strong>
   <button type="button" class="btn pri" id="installAppBtn">Instalar app</button>
@@ -779,7 +779,7 @@ if($("btnEnviarDrive")){
       botao.textContent="☁️ Enviando para o Google...";
       return enviarParaDrive(payload);
     }).then(function(resposta){
-      mostrarMsg("Checklist, PDF e fotos enviados para o Drive. Planilha: "+resposta.spreadsheetUrl+" | Pasta: "+resposta.folderUrl);
+      mostrarMsg("ZIP com o PDF e as fotos enviado para o Drive: "+resposta.zipUrl+" | Planilha: "+resposta.spreadsheetUrl+" | Pasta: "+resposta.folderUrl);
     }).catch(function(err){
       console.error("Falha ao enviar checklist ao Google Drive.",err);
       mostrarMsg("Não foi possível confirmar o envio ao Google Drive: "+((err&&err.message)||"erro desconhecido"));
