@@ -117,7 +117,7 @@ h2{font-size:.95rem;margin:18px 0 8px;color:var(--ac);text-transform:uppercase;l
 </head>
 <body>
 <div class="wrap">
-<header><small>EMFLORTEC ENGENHARIA · VERSÃO 1.6</small><h1>Checklist de Veículo da Locadora</h1></header>
+<header><small>EMFLORTEC ENGENHARIA · VERSÃO 1.8</small><h1>Checklist de Veículo da Locadora</h1></header>
 <div class="install-banner" id="installBanner" aria-live="polite">
   <strong>Instalar este checklist no celular</strong>
   <button type="button" class="btn pri" id="installAppBtn">Instalar app</button>
@@ -180,6 +180,7 @@ h2{font-size:.95rem;margin:18px 0 8px;color:var(--ac);text-transform:uppercase;l
 <div class="actions">
   <button type="button" class="btn share" id="btnCompartilhar">📄 Compartilhar PDF pelo WhatsApp</button>
   <button type="button" class="btn pri" id="btnEnviarDrive">☁️ Enviar para Google Drive</button>
+  <button type="button" class="btn" id="btnBaixarZip" style="display:none">⬇️ Baixar ZIP novamente</button>
   <button type="button" class="btn sec" id="btnNovo">🆕 Novo Checklist</button>
 </div>
 <p class="hint noprint" style="margin-top:8px">Toque em “Compartilhar PDF pelo WhatsApp”. Após a preparação do arquivo, toque novamente no mesmo botão e escolha o WhatsApp. Use “Novo Checklist” somente quando quiser limpar os dados e começar outro.</p>
@@ -187,6 +188,7 @@ h2{font-size:.95rem;margin:18px 0 8px;color:var(--ac);text-transform:uppercase;l
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
 var GOOGLE_APPS_SCRIPT_URL="https://script.google.com/macros/s/AKfycbygm98NS7ZvosWZ3MKAPkuHcdq6h8HMp9-l1AXfgcW6rss9957wd27rWrgpR7mH2m12Gg/exec";
 if ('serviceWorker' in navigator) {
@@ -572,7 +574,7 @@ function prepararParaPDF(){
       celulaFoto.appendChild(elemento("p",foto.legenda,"margin:0 0 6px;font-size:11px;font-weight:bold;text-align:left;"));
       var img=document.createElement("img");
       img.alt=foto.legenda;img.src=foto.url;
-      img.style.cssText="display:block;width:100%;height:230px;object-fit:contain;";
+      img.style.cssText="display:block;width:auto;height:auto;max-width:100%;max-height:320px;margin:0 auto;";
       celulaFoto.appendChild(img);
       linhaFotos.appendChild(celulaFoto);
       corpo.appendChild(linhaFotos);
@@ -614,9 +616,10 @@ function nomeBase(){
   return "CHECKLIST - "+operacao+" - "+placaLimpa()+" - "+dataArquivo();
 }
 function nomeArquivoPDF(){return nomeBase()+".pdf";}
-var arquivoPDFPronto=null,versaoDadosChecklist=0;
+var arquivoPDFPronto=null,arquivoZIPPronto=null,versaoDadosChecklist=0;
 function registrarAlteracaoChecklist(){
   if(arquivoPDFPronto){arquivoPDFPronto=null;}
+  if(arquivoZIPPronto){arquivoZIPPronto=null;$("btnBaixarZip").style.display="none";}
   versaoDadosChecklist++;
 }
 function mostrarMsg(texto){
@@ -627,6 +630,9 @@ function baixarArquivo(arquivo){
   var conteudo=arquivo.blob||arquivo,url=URL.createObjectURL(conteudo),a=document.createElement("a");
   a.href=url;a.download=arquivo.name||nomeArquivoPDF();a.style.display="none";document.body.appendChild(a);a.click();
   setTimeout(function(){a.remove();URL.revokeObjectURL(url);},15000);
+}
+if($("btnBaixarZip")){
+  $("btnBaixarZip").onclick=function(){if(arquivoZIPPronto)baixarArquivo(arquivoZIPPronto);};
 }
 function criarArquivo(blob,nome){
   return typeof File==="undefined"?{blob:blob,name:nome,type:"application/pdf"}:new File([blob],nome,{type:"application/pdf"});
@@ -673,27 +679,32 @@ function blobComoDataURL(blob){
     leitor.readAsDataURL(blob);
   });
 }
+function nomeArquivoZIP(){
+  var valor=$("data").value,partes=valor.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  var data=partes?partes[3]+"-"+partes[2]+"-"+partes[1]:dataArquivo();
+  return placaLimpa()+" - "+data+".zip";
+}
 function montarEnvioDrive(pdfBlob){
-  var anexos=[],totalBytesAnexos=0;
-  function incluir(nome,legenda,dataURL){
+  if(typeof JSZip==="undefined")return Promise.reject(new Error("A biblioteca ZIP não carregou. Verifique a internet e tente novamente."));
+  var zip=new JSZip();
+  function incluirFoto(nome,dataURL){
     if(!dataURL)return;
     var separador=dataURL.indexOf(",");
     if(separador<0)throw new Error("Uma das fotos está em formato inválido.");
-    var dados=dataURL.slice(separador+1),bytes=Math.floor(dados.length*3/4)-(dados.endsWith("==")?2:(dados.endsWith("=")?1:0));
-    if(bytes>12*1024*1024)throw new Error("Um arquivo excede 12 MB. Reduza ou remova essa foto antes de enviar.");
-    totalBytesAnexos+=bytes;
-    if(totalBytesAnexos>20*1024*1024)throw new Error("Os arquivos ultrapassam 20 MB no total. Remova algumas fotos antes de enviar.");
-    anexos.push({name:nome,mimeType:dataURL.slice(5,dataURL.indexOf(";")),caption:legenda,data:dados});
+    zip.file(nome,dataURL.slice(separador+1),{base64:true});
   }
   SLOTS_VEICULO.forEach(function(slot){
-    incluir(slot.key+".jpg","Veículo - "+slot.label,fotosVeiculo[slot.key]);
+    incluirFoto("fotos-veiculo/"+slot.key+".jpg",fotosVeiculo[slot.key]);
   });
   for(var i=1;i<=n;i++){
-    (fotos[i]||[]).forEach(function(url,indice){incluir("item-"+i+"-foto-"+(indice+1)+".jpg","Item "+i+" - foto "+(indice+1)+" - "+$("it"+i).querySelector(".t span:last-child").textContent.trim(),url)});
+    (fotos[i]||[]).forEach(function(url,indice){incluirFoto("fotos-itens/item-"+i+"-foto-"+(indice+1)+".jpg",url)});
   }
-  if(assinou)incluir("assinatura.png","Assinatura do motorista",cv.toDataURL("image/png"));
-  return blobComoDataURL(pdfBlob).then(function(pdfURL){
-    incluir(nomeArquivoPDF(),"PDF do checklist",pdfURL);
+  if(assinou)incluirFoto("assinatura.png",cv.toDataURL("image/png"));
+  zip.file(nomeArquivoPDF(),pdfBlob);
+  var nomeZip=nomeArquivoZIP();
+  return zip.generateAsync({type:"blob",compression:"STORE"}).then(function(zipBlob){
+    if(zipBlob.size>20*1024*1024)throw new Error("O ZIP ultrapassou 20 MB. Remova algumas fotos e tente novamente.");
+    return blobComoDataURL(zipBlob).then(function(zipDataURL){
     var respostas=[];
     for(var itemN=1;itemN<=n;itemN++){
       var item=$("it"+itemN),marcada=item.querySelector('input[type="radio"]:checked');
@@ -718,11 +729,12 @@ function montarEnvioDrive(pdfBlob){
         dataAssinatura:$("dataass").value
       },
       checklist:respostas,
-      attachments:anexos
+      attachments:[{name:nomeZip,mimeType:"application/zip",caption:"ZIP com PDF e fotos",data:zipDataURL.slice(zipDataURL.indexOf(",")+1)}]
     };
     var json=JSON.stringify(payload);
     if(new Blob([json]).size>30*1024*1024)throw new Error("O envio ultrapassou 30 MB. Remova algumas fotos e tente novamente.");
-    return payload;
+    return {payload:payload,zipBlob:zipBlob,zipName:nomeZip};
+    });
   });
 }
 function enviarParaDrive(payload){
@@ -775,11 +787,15 @@ if($("btnEnviarDrive")){
     gerarPDF().then(function(pdfBlob){
       if(versao!==versaoDadosChecklist)throw new Error("Os dados mudaram durante a preparação. Toque em enviar novamente.");
       return montarEnvioDrive(pdfBlob);
-    }).then(function(payload){
+    }).then(function(pacote){
+      if(versao!==versaoDadosChecklist)throw new Error("Os dados mudaram durante a preparação. Toque em enviar novamente.");
+      arquivoZIPPronto={blob:pacote.zipBlob,name:pacote.zipName};
+      $("btnBaixarZip").style.display="inline-block";
+      baixarArquivo(arquivoZIPPronto);
       botao.textContent="☁️ Enviando para o Google...";
-      return enviarParaDrive(payload);
-    }).then(function(resposta){
-      mostrarMsg("ZIP com o PDF e as fotos enviado para o Drive: "+resposta.zipUrl+" | Planilha: "+resposta.spreadsheetUrl+" | Pasta: "+resposta.folderUrl);
+      return enviarParaDrive(pacote.payload);
+    }).then(function(){
+      mostrarMsg("Envio ao Drive concluído. Tentei baixar uma cópia do ZIP; se o download não iniciou, toque em “Baixar ZIP novamente”.");
     }).catch(function(err){
       console.error("Falha ao enviar checklist ao Google Drive.",err);
       mostrarMsg("Não foi possível confirmar o envio ao Google Drive: "+((err&&err.message)||"erro desconhecido"));
