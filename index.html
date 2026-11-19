@@ -117,7 +117,7 @@ h2{font-size:.95rem;margin:18px 0 8px;color:var(--ac);text-transform:uppercase;l
 </head>
 <body>
 <div class="wrap">
-<header><small>EMFLORTEC ENGENHARIA · VERSÃO 1.9</small><h1>Checklist de Veículo da Locadora</h1></header>
+<header><small>EMFLORTEC ENGENHARIA · VERSÃO 2.0</small><h1>Checklist de Veículo da Locadora</h1></header>
 <div class="install-banner" id="installBanner" aria-live="polite">
   <strong>Instalar este checklist no celular</strong>
   <button type="button" class="btn pri" id="installAppBtn">Instalar app</button>
@@ -685,65 +685,102 @@ function nomeArquivoZIP(){
   var data=partes?partes[3]+"-"+partes[2]+"-"+partes[1]:dataArquivo();
   return placaLimpa()+" - "+data+".zip";
 }
-function montarEnvioDrive(pdfBlob){
-  if(typeof JSZip==="undefined")return Promise.reject(new Error("A biblioteca ZIP não carregou. Verifique a internet e tente novamente."));
-  var zip=new JSZip();
-  function incluirFoto(nome,dataURL){
-    if(!dataURL)return;
-    var separador=dataURL.indexOf(",");
-    if(separador<0)throw new Error("Uma das fotos está em formato inválido.");
-    zip.file(nome,dataURL.slice(separador+1),{base64:true});
-  }
-  SLOTS_VEICULO.forEach(function(slot){
-    incluirFoto("fotos-veiculo/"+slot.key+".jpg",fotosVeiculo[slot.key]);
-  });
-  for(var i=1;i<=n;i++){
-    (fotos[i]||[]).forEach(function(url,indice){incluirFoto("fotos-itens/item-"+i+"-foto-"+(indice+1)+".jpg",url)});
-  }
-  if(assinou)incluirFoto("assinatura.png",cv.toDataURL("image/png"));
-  zip.file(nomeArquivoPDF(),pdfBlob);
-  var nomeZip=nomeArquivoZIP();
-  return zip.generateAsync({type:"blob",compression:"STORE"}).then(function(zipBlob){
-    if(zipBlob.size>6*1024*1024)throw new Error("O ZIP ultrapassou 6 MB. Remova algumas fotos e tente novamente.");
-    return blobComoDataURL(zipBlob).then(function(zipDataURL){
-    var respostas=[];
-    for(var itemN=1;itemN<=n;itemN++){
-      var item=$("it"+itemN),marcada=item.querySelector('input[type="radio"]:checked');
-      respostas.push({numero:itemN,item:item.querySelector(".t span:last-child").textContent.trim(),resultado:marcada?marcada.value:"-",problema:$("ob"+itemN).value.trim()});
-    }
-    var tanque=document.querySelector('input[name="tanque"]:checked');
-    var payload={
-      version:1,
-      requestId:(window.crypto&&crypto.randomUUID)?crypto.randomUUID():(Date.now()+"-"+Math.random().toString(36).slice(2)),
-      dados:{
-        operacao:nomeOperacao(),
-        placa:$("placa").value.trim(),
-        modelo:$("modelo").value.trim(),
-        quilometragem:$("km").value,
-        locadora:$("locadora").value.trim(),
-        contrato:$("contrato").value.trim(),
-        motorista:$("motorista").value.trim(),
-        cpf:$("cpf").value.trim(),
-        data:$("data").value,
-        tanque:tanque?tanque.value:"",
-        observacoes:$("obs").value.trim(),
-        dataAssinatura:$("dataass").value
-      },
-      checklist:respostas,
-      attachments:[{name:nomeZip,mimeType:"application/zip",caption:"ZIP com PDF e fotos",data:zipDataURL.slice(zipDataURL.indexOf(",")+1)}]
+function compactarFotoZIP(dataURL){
+  return new Promise(function(resolve,reject){
+    var im=new Image();
+    im.onload=function(){
+      try{
+        var maximo=Math.min(1600,Math.max(im.naturalWidth,im.naturalHeight)),qualidade=0.78;
+        var canvas=document.createElement("canvas"),contexto=canvas.getContext("2d");
+        function desenhar(){
+          var escala=maximo/Math.max(im.naturalWidth,im.naturalHeight);
+          canvas.width=Math.max(1,Math.round(im.naturalWidth*escala));
+          canvas.height=Math.max(1,Math.round(im.naturalHeight*escala));
+          contexto=canvas.getContext("2d");
+          contexto.drawImage(im,0,0,canvas.width,canvas.height);
+        }
+        function codificar(){
+          canvas.toBlob(function(blob){
+            if(!blob){reject(new Error("Não foi possível compactar uma das fotos."));return}
+            if(blob.size<=500*1024){resolve(blob);return}
+            if(qualidade>0.55){qualidade=Math.max(0.55,qualidade-0.1);codificar();return}
+            if(maximo<=320){reject(new Error("Uma foto não pôde ser reduzida para até 500 KB."));return}
+            maximo=Math.max(320,Math.round(maximo*0.8));
+            qualidade=0.75;desenhar();codificar();
+          },"image/jpeg",qualidade);
+        }
+        desenhar();codificar();
+      }catch(err){reject(err)}
     };
-    var json=JSON.stringify(payload);
-    if(new Blob([json]).size>9*1024*1024)throw new Error("O envio ultrapassou 9 MB. Remova algumas fotos e tente novamente.");
-    return {payload:payload,zipBlob:zipBlob,zipName:nomeZip};
-    });
+    im.onerror=function(){reject(new Error("Não foi possível abrir uma das fotos para o ZIP."))};
+    im.src=dataURL;
   });
 }
-function enviarParaDrive(payload){
+function montarEnvioDrive(){
+  if(typeof JSZip==="undefined")return Promise.reject(new Error("A biblioteca ZIP não carregou. Verifique a internet e tente novamente."));
+  var zip=new JSZip();
+  var tarefas=[],fotosCompactadas=[],indiceFoto=0;
+  function incluirFoto(nome,url){
+    if(!url)return;
+    var indice=indiceFoto++;
+    var nomeZip=("000"+(indice+1)).slice(-3)+"-"+nome;
+    tarefas.push(compactarFotoZIP(url).then(function(blob){
+      zip.file(nomeZip,blob);
+      fotosCompactadas[indice]={index:indice,name:nomeZip,blob:blob};
+    }));
+  }
+  SLOTS_VEICULO.forEach(function(slot){
+    incluirFoto("veiculo-"+slot.key+".jpg",fotosVeiculo[slot.key]);
+  });
+  for(var i=1;i<=n;i++){
+    (fotos[i]||[]).forEach(function(url,indice){
+      incluirFoto("item-"+i+"-foto-"+(indice+1)+".jpg",url);
+    });
+  }
+  var nomeZip=nomeArquivoZIP();
+  return Promise.all(tarefas).then(function(){
+    return zip.generateAsync({type:"blob",compression:"STORE"});
+  }).then(function(zipBlob){
+    return {zipBlob:zipBlob,zipName:nomeZip,photos:fotosCompactadas};
+  });
+}
+function montarPayloadDrive(pacote){
+  var respostas=[];
+  for(var itemN=1;itemN<=n;itemN++){
+    var item=$("it"+itemN),marcada=item.querySelector('input[type="radio"]:checked');
+    respostas.push({numero:itemN,item:item.querySelector(".t span:last-child").textContent.trim(),resultado:marcada?marcada.value:"-",problema:$("ob"+itemN).value.trim()});
+  }
+  var tanque=document.querySelector('input[name="tanque"]:checked');
+  return {
+    version:1,
+    action:"finish",
+    requestId:(window.crypto&&crypto.randomUUID)?crypto.randomUUID():(Date.now()+"-"+Math.random().toString(36).slice(2)),
+    dados:{
+      operacao:nomeOperacao(),
+      placa:$("placa").value.trim(),
+      modelo:$("modelo").value.trim(),
+      quilometragem:$("km").value,
+      locadora:$("locadora").value.trim(),
+      contrato:$("contrato").value.trim(),
+      motorista:$("motorista").value.trim(),
+      cpf:$("cpf").value.trim(),
+      data:$("data").value,
+      tanque:tanque?tanque.value:"",
+      observacoes:$("obs").value.trim(),
+      dataAssinatura:$("dataass").value
+    },
+    checklist:respostas,
+    totalPhotos:pacote.photos.length,
+    photoNames:pacote.photos.map(function(foto){return foto.name})
+  };
+}
+var numeroPostDrive=0;
+function postarParaDrive(payload){
   if(!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec$/.test(GOOGLE_APPS_SCRIPT_URL)){
     return Promise.reject(new Error("O envio ao Drive ainda não foi configurado. Publique o Apps Script e informe a URL terminada em /exec no código do checklist."));
   }
   return new Promise(function(resolve,reject){
-    var nomeFrame="driveUpload_"+payload.requestId.replace(/[^a-zA-Z0-9_]/g,"");
+    var nomeFrame="driveUpload_"+payload.requestId.replace(/[^a-zA-Z0-9_]/g,"")+"_"+(++numeroPostDrive);
     var frame=document.createElement("iframe"),form=document.createElement("form"),campo=document.createElement("textarea");
     var encerrado=false,temporizador;
     frame.name=nomeFrame;frame.style.display="none";frame.setAttribute("aria-hidden","true");
@@ -776,6 +813,42 @@ function enviarParaDrive(payload){
     try{form.submit()}catch(err){encerrado=true;limpar();reject(err)}
   });
 }
+function enviarParaDrive(payload,pacote,atualizarProgresso){
+  var totalLotes=Math.ceil(pacote.photos.length/4),sequencia=Promise.resolve();
+  for(var lote=0;lote<totalLotes;lote++){
+    (function(indiceLote){
+      sequencia=sequencia.then(function(){
+        var inicio=indiceLote*4,fotosLote=pacote.photos.slice(inicio,inicio+4);
+        return Promise.all(fotosLote.map(function(foto){
+          return blobComoDataURL(foto.blob).then(function(dataURL){
+            return {index:foto.index,name:foto.name,data:dataURL.slice(dataURL.indexOf(",")+1)};
+          });
+        })).then(function(fotosBase64){
+          return postarParaDrive({
+            version:1,
+            action:"photos",
+            requestId:payload.requestId,
+            dados:{placa:payload.dados.placa,data:payload.dados.data},
+            totalPhotos:pacote.photos.length,
+            photos:fotosBase64
+          });
+        }).then(function(){
+          if(atualizarProgresso)atualizarProgresso(indiceLote+1,totalLotes);
+        });
+      });
+    })(lote);
+  }
+  return sequencia.then(function(){return postarParaDrive(payload)}).catch(function(err){
+    return postarParaDrive({
+      version:1,
+      action:"cancel",
+      requestId:payload.requestId,
+      dados:{placa:payload.dados.placa,data:payload.dados.data}
+    }).catch(function(cleanupErr){
+      console.warn("Não foi possível limpar as fotos temporárias do envio.",cleanupErr);
+    }).then(function(){throw err});
+  });
+}
 if($("btnEnviarDrive")){
   $("btnEnviarDrive").onclick=function(){
     if(!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec$/.test(GOOGLE_APPS_SCRIPT_URL)){
@@ -783,23 +856,25 @@ if($("btnEnviarDrive")){
       return;
     }
     if(!validar())return;
-    var botao=this,texto=botao.textContent,versao=versaoDadosChecklist;
+    var botao=this,texto=botao.textContent,versao=versaoDadosChecklist,downloadSolicitado=false;
     botao.disabled=true;$("msg").style.display="none";botao.textContent="⏳ Preparando envio...";
-    gerarPDF().then(function(pdfBlob){
-      if(versao!==versaoDadosChecklist)throw new Error("Os dados mudaram durante a preparação. Toque em enviar novamente.");
-      return montarEnvioDrive(pdfBlob);
-    }).then(function(pacote){
+    montarEnvioDrive().then(function(pacote){
       if(versao!==versaoDadosChecklist)throw new Error("Os dados mudaram durante a preparação. Toque em enviar novamente.");
       arquivoZIPPronto={blob:pacote.zipBlob,name:pacote.zipName};
       $("btnBaixarZip").style.display="inline-block";
       baixarArquivo(arquivoZIPPronto);
-      botao.textContent="☁️ Enviando para o Google...";
-      return enviarParaDrive(pacote.payload);
+      downloadSolicitado=true;
+      var payload=montarPayloadDrive(pacote);
+      if(versao!==versaoDadosChecklist)throw new Error("Os dados mudaram durante o envio. O ZIP foi baixado; confira as fotos antes de enviar novamente.");
+      return enviarParaDrive(payload,pacote,function(atual,total){botao.textContent="☁️ Enviando fotos "+atual+"/"+total+"...";});
     }).then(function(){
-      mostrarMsg("Envio ao Drive concluído. Tentei baixar uma cópia do ZIP; se o download não iniciou, toque em “Baixar ZIP novamente”.");
+      mostrarMsg("O ZIP somente com as fotos foi baixado e enviado ao Drive. Se o download não iniciou, toque em “Baixar ZIP novamente”.");
     }).catch(function(err){
       console.error("Falha ao enviar checklist ao Google Drive.",err);
-      mostrarMsg("Não foi possível confirmar o envio ao Google Drive: "+((err&&err.message)||"erro desconhecido"));
+      var aviso=downloadSolicitado
+        ?"O download do ZIP foi solicitado, mas o envio ao Drive falhou: "
+        :"Não foi possível gerar o ZIP ou enviar ao Drive: ";
+      mostrarMsg(aviso+((err&&err.message)||"erro desconhecido"));
     }).finally(function(){botao.disabled=false;botao.textContent=texto;});
   };
 }
