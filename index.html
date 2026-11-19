@@ -117,7 +117,7 @@ h2{font-size:.95rem;margin:18px 0 8px;color:var(--ac);text-transform:uppercase;l
 </head>
 <body>
 <div class="wrap">
-<header><small>EMFLORTEC ENGENHARIA · VERSÃO 1.8</small><h1>Checklist de Veículo da Locadora</h1></header>
+<header><small>EMFLORTEC ENGENHARIA · VERSÃO 1.9</small><h1>Checklist de Veículo da Locadora</h1></header>
 <div class="install-banner" id="installBanner" aria-live="polite">
   <strong>Instalar este checklist no celular</strong>
   <button type="button" class="btn pri" id="installAppBtn">Instalar app</button>
@@ -150,7 +150,7 @@ h2{font-size:.95rem;margin:18px 0 8px;color:var(--ac);text-transform:uppercase;l
 
 <div class="card" id="cardFotosVeiculo">
  <h2 style="margin-top:0">📸 Fotos obrigatórias do veículo (4 lados)</h2>
- <p class="hint" style="margin-bottom:0">Tire as 4 fotos do veículo. Toque em cada campo para adicionar a foto correspondente. As fotos mantêm a resolução e a proporção capturadas; no PDF, são apenas ajustadas para caber na página.</p>
+ <p class="hint" style="margin-bottom:0">Tire as 4 fotos do veículo. Toque em cada campo para adicionar a foto correspondente. As fotos mantêm a proporção original; a resolução e a qualidade JPEG são ajustadas para reduzir o tamanho sem deformar. No PDF, elas também são ajustadas para caber na página.</p>
  <div class="fotos-veiculo-grid" id="fotosVeiculoGrid"></div>
  <div class="aviso-obrig" id="avisoFotosVeiculo">⚠️ As 4 fotos do veículo são obrigatórias (dianteira, traseira, lateral esquerda e lateral direita).</div>
 </div>
@@ -368,10 +368,11 @@ function processaFoto(file,cb,gps,quando){
   var im=new Image();
   im.onload=function(){
    try{
-     var c=document.createElement("canvas");c.width=im.naturalWidth;c.height=im.naturalHeight;
+     var escala=Math.min(1,2048/Math.max(im.naturalWidth,im.naturalHeight));
+     var c=document.createElement("canvas");c.width=Math.max(1,Math.round(im.naturalWidth*escala));c.height=Math.max(1,Math.round(im.naturalHeight*escala));
      c.getContext("2d").drawImage(im,0,0,c.width,c.height);
      carimbo(c,gps,quando);
-     var foto=c.toDataURL("image/jpeg",0.9);
+     var foto=c.toDataURL("image/jpeg",0.75);
      if(foto==="data:,")throw new Error("O navegador não conseguiu exportar a imagem completa.");
      cb(foto);
    }catch(err){falha(err)}
@@ -703,7 +704,7 @@ function montarEnvioDrive(pdfBlob){
   zip.file(nomeArquivoPDF(),pdfBlob);
   var nomeZip=nomeArquivoZIP();
   return zip.generateAsync({type:"blob",compression:"STORE"}).then(function(zipBlob){
-    if(zipBlob.size>20*1024*1024)throw new Error("O ZIP ultrapassou 20 MB. Remova algumas fotos e tente novamente.");
+    if(zipBlob.size>6*1024*1024)throw new Error("O ZIP ultrapassou 6 MB. Remova algumas fotos e tente novamente.");
     return blobComoDataURL(zipBlob).then(function(zipDataURL){
     var respostas=[];
     for(var itemN=1;itemN<=n;itemN++){
@@ -732,7 +733,7 @@ function montarEnvioDrive(pdfBlob){
       attachments:[{name:nomeZip,mimeType:"application/zip",caption:"ZIP com PDF e fotos",data:zipDataURL.slice(zipDataURL.indexOf(",")+1)}]
     };
     var json=JSON.stringify(payload);
-    if(new Blob([json]).size>30*1024*1024)throw new Error("O envio ultrapassou 30 MB. Remova algumas fotos e tente novamente.");
+    if(new Blob([json]).size>9*1024*1024)throw new Error("O envio ultrapassou 9 MB. Remova algumas fotos e tente novamente.");
     return {payload:payload,zipBlob:zipBlob,zipName:nomeZip};
     });
   });
